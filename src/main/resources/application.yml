@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: kafka-admin
+
+kafka-admin:
+  default-bootstrap-servers: localhost:9092
+  default-security-protocol: SASL_PLAINTEXT
+  default-sasl-mechanism: SCRAM-SHA-256
+  default-username: admin
+  default-password: admin-secret
+
+springdoc:
+  api-docs:
+    title: Kafka Admin API
+    description: REST API for managing Kafka cluster operations including topics, users, quotas, ACLs, and cluster linking
+  swagger-ui:
+    path: /swagger
+
+logging:
+  level:
+    com.kafka.admin: DEBUG
+    org.apache.kafka: WARN
