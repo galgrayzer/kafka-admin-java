@@ -5,9 +5,12 @@ A REST API for managing Kafka cluster operations using the Apache Kafka Admin Cl
 ## Features
 
 - **Topics**: Create, list, describe, update, and delete Kafka topics
-- **Users**: Manage SCRAM users (create, list, delete)
+- **Users**: Manage SCRAM users (create, list, delete, validate)
 - **Quotas**: Manage client/user quotas
 - **ACLs**: Manage access control lists including convenient producer/consumer ACL helpers
+- **Consumer Groups**: Manage consumer offsets (get, reset, copy)
+- **Messages**: Fetch and produce messages
+- **Cluster**: Get cluster metadata and list topics
 - **Cluster Linking**: Manage cluster links and mirror topics (Kafka 3.0+)
 
 ## Requirements
@@ -91,14 +94,16 @@ GET /api/v1/topics?bootstrapServers=broker1:9092,broker2:9092
 | GET | `/api/v1/users` | List all SCRAM users |
 | POST | `/api/v1/users` | Create a new SCRAM user |
 | DELETE | `/api/v1/users/{username}` | Delete a SCRAM user |
+| GET | `/api/v1/users/{username}/validate` | Check if user exists |
 
 ### Quotas
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/quotas` | List all quotas |
+| GET | `/api/v1/quotas/user/{username}` | Get quota for a specific user |
 | POST | `/api/v1/quotas` | Create or alter a quota |
-| DELETE | `/api/v1/quotas?entityType=...&entityName=...` | Delete a quota |
+| DELETE | `/api/v1/quotas?username=...` | Delete a quota for a user |
 
 ### ACLs
 
@@ -107,10 +112,35 @@ GET /api/v1/topics?bootstrapServers=broker1:9092,broker2:9092
 | GET | `/api/v1/acls` | List all ACLs |
 | POST | `/api/v1/acls` | Create an ACL |
 | DELETE | `/api/v1/acls` | Delete an ACL |
-| POST | `/api/v1/acls/user/{username}/consumer` | Grant consumer ACLs |
-| POST | `/api/v1/acls/user/{username}/producer` | Grant producer ACLs |
+| POST | `/api/v1/acls/user/{username}/consumer` | Grant consumer ACLs (DESCRIBE, READ on topic; DESCRIBE, READ on group) |
+| DELETE | `/api/v1/acls/user/{username}/consumer` | Revoke consumer ACLs |
+| POST | `/api/v1/acls/user/{username}/producer` | Grant producer ACLs (DESCRIBE, WRITE, CREATE on topic) |
+| DELETE | `/api/v1/acls/user/{username}/producer` | Revoke producer ACLs |
 | GET | `/api/v1/acls/user/{username}/consumer/check` | Check consumer ACLs |
 | GET | `/api/v1/acls/user/{username}/producer/check` | Check producer ACLs |
+
+### Consumer Groups
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/consumer-groups/{groupId}/offsets` | Get consumer offsets |
+| POST | `/api/v1/consumer-groups/{groupId}/offsets/reset` | Reset consumer offsets |
+| POST | `/api/v1/consumer-groups/{groupId}/offsets/copy` | Copy offsets from another group |
+
+### Messages
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/messages/topic/{topicName}/offsets` | Get topic offsets |
+| POST | `/api/v1/messages/fetch` | Fetch messages |
+| POST | `/api/v1/messages/produce` | Produce messages |
+
+### Cluster
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/cluster/metadata` | Get cluster metadata |
+| GET | `/api/v1/cluster/topics` | List all topic names |
 
 ### Cluster Links
 
@@ -138,6 +168,17 @@ curl -X POST "http://localhost:8080/api/v1/topics?bootstrapServers=broker1:9092"
     "replicationFactor": 1,
     "configs": {
       "cleanup.policy": "delete"
+    }'
+```
+
+### Update Topic Configuration
+
+```bash
+curl -X PATCH "http://localhost:8080/api/v1/topics/my-topic?bootstrapServers=broker1:9092" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "configs": {
+      "cleanup.policy": "compact"
     }
   }'
 ```
@@ -161,6 +202,102 @@ curl -X POST "http://localhost:8080/api/v1/acls/user/myuser/producer?bootstrapSe
   -d '{
     "topic": "my-topic"
   }'
+```
+
+### Revoke Producer ACL
+
+```bash
+curl -X DELETE "http://localhost:8080/api/v1/acls/user/myuser/producer?bootstrapServers=broker1:9092" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "my-topic"
+  }'
+```
+
+### Create or Alter Quota
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/quotas?bootstrapServers=broker1:9092" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "myuser",
+    "bytesInQuota": 1048576,
+    "bytesOutQuota": 2097152
+  }'
+```
+
+### Get User Quota
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/quotas/user/myuser?bootstrapServers=broker1:9092"
+```
+
+### Delete User Quota
+
+```bash
+curl -X DELETE "http://localhost:8080/api/v1/quotas?username=myuser&bootstrapServers=broker1:9092"
+```
+
+### Get Consumer Offsets
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/consumer-groups/my-group/offsets?bootstrapServers=broker1:9092"
+```
+
+### Reset Consumer Offsets
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/consumer-groups/my-group/offsets/reset?bootstrapServers=broker1:9092" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "my-topic",
+    "resetStrategy": "earliest"
+  }'
+```
+
+### Fetch Messages
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/messages/fetch?bootstrapServers=broker1:9092" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "my-topic",
+    "partition": 0,
+    "startingPosition": "earliest",
+    "maxMessages": 10
+  }'
+```
+
+### Produce Messages
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/messages/produce?bootstrapServers=broker1:9092" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "my-topic",
+    "records": [
+      {"key": "key1", "value": "value1"},
+      {"key": "key2", "value": "value2"}
+    ]
+  }'
+```
+
+### Get Cluster Metadata
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/cluster/metadata?bootstrapServers=broker1:9092"
+```
+
+### List Topic Names
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/cluster/topics?bootstrapServers=broker1:9092"
+```
+
+### Validate User
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/users/myuser/validate?bootstrapServers=broker1:9092"
 ```
 
 ## Security

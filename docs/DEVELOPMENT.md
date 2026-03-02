@@ -49,10 +49,16 @@ export KAFKA_ADMIN_DEFAULT_SASL_MECHANISM="PLAIN"
 ./mvnw test
 
 # Run specific test class
-./mvnw test -Dtest=TopicServiceTest
+./mvnw test -Dtest=ClusterLinkServiceTest
 
-# Run with verbose output
-./mvnw test -X
+# Run specific test method
+./mvnw test -Dtest=ClusterLinkServiceTest#testListClusterLinksThrowsUnsupportedOperationException
+
+# Skip tests during build
+./mvnw clean package -DskipTests
+
+# Build with verbose output
+./mvnw clean package -X
 ```
 
 ## Adding New Endpoints

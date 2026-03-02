@@ -18,13 +18,19 @@ src/main/java/com/kafka/admin/
 │   ├── UserController.java               # SCRAM user endpoints
 │   ├── QuotaController.java              # Quota management endpoints
 │   ├── AclController.java                # ACL management endpoints
-│   └── ClusterLinkController.java        # Cluster link endpoints
+│   ├── ClusterLinkController.java        # Cluster link endpoints
+│   ├── ConsumerGroupController.java      # Consumer group operations
+│   ├── MessageController.java            # Message fetch/produce
+│   └── ClusterController.java            # Cluster metadata/topics
 ├── service/
 │   ├── TopicService.java                 # Topic business logic
 │   ├── UserService.java                  # User business logic
-│   ├── QuotaService.java                 # Quota business logic
-│   ├── AclService.java                   # ACL business logic
-│   └── ClusterLinkService.java           # Cluster link business logic
+│   ├── QuotaService.java                # Quota business logic
+│   ├── AclService.java                  # ACL business logic
+│   ├── ClusterLinkService.java           # Cluster link business logic
+│   ├── ConsumerService.java              # Consumer group operations
+│   ├── MessageService.java              # Message fetch/produce
+│   └── ClusterService.java              # Cluster metadata operations
 ├── model/
 │   ├── request/                          # Request DTOs
 │   ├── response/                        # Response DTOs
@@ -89,6 +95,21 @@ Priority order (highest to lowest):
 ### ClusterLinkService
 - Manages cluster links and mirror topics
 - Uses `NewClusterLink`, `listClusterLinks`, `createMirrorTopics`
+
+### ConsumerService
+- Manages consumer group offsets
+- Gets, resets, and copies consumer offsets
+- Uses `listConsumerGroupOffsets`, `alterConsumerGroupOffsets`
+
+### MessageService
+- Fetches and produces messages
+- Gets topic offsets
+- Uses `KafkaConsumer` and `KafkaProducer`
+
+### ClusterService
+- Gets cluster metadata (brokers, topics)
+- Lists topic names
+- Uses `describeCluster`, `listTopics`
 
 ## Key Design Decisions
 

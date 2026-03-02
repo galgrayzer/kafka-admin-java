@@ -67,4 +67,22 @@ public class UserController {
                 ctx.username(), ctx.password(), ctx.saslMechanism());
         return ApiResponse.success("User deleted successfully", username);
     }
+
+    @GetMapping("/{username}/validate")
+    @Operation(summary = "Validate user exists", description = "Check if a SCRAM user exists")
+    public ApiResponse validateUser(
+            @Parameter(description = "Username") @PathVariable String username,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
+            @RequestParam(required = false) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+        
+        var ctx = contextExtractor.extract(request);
+        boolean exists = userService.userExists(username, ctx.bootstrapServers(), ctx.securityProtocol(), 
+                ctx.username(), ctx.password(), ctx.saslMechanism());
+        if (exists) {
+            return ApiResponse.success("User exists", true);
+        } else {
+            return ApiResponse.success("User does not exist", false);
+        }
+    }
 }

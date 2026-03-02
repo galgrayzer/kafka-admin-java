@@ -94,4 +94,21 @@ public class UserService {
             admin.alterUserScramCredentials(List.of(deletion)).all().get();
         }
     }
+
+    public boolean userExists(
+            String username,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String adminUsername,
+            @Nullable String adminPassword,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+
+        try (Admin admin = adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
+
+            DescribeUserScramCredentialsResult result = admin.describeUserScramCredentials();
+            Map<String, UserScramCredentialsDescription> users = result.all().get();
+            return users.containsKey(username);
+        }
+    }
 }

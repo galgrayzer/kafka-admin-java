@@ -1,0 +1,8 @@
+1. get topic offsets
+2. copy consumer offsets to another consumer group for a given topic
+3. fetch messages - from specific offset | from edge | from time
+5. insert messages
+6. get consumer offsets
+7. reset consumer offsets - latest | earliest | specific offset | by time
+8. get cluster metadata
+9. validate scram user
