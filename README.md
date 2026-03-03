@@ -124,7 +124,8 @@ GET /api/v1/topics?bootstrapServers=broker1:9092,broker2:9092
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/consumer-groups/{groupId}/offsets` | Get consumer offsets |
-| POST | `/api/v1/consumer-groups/{groupId}/offsets/reset` | Reset consumer offsets |
+| POST | `/api/v1/consumer-groups/{groupId}/offsets/reset` | Reset consumer offsets (earliest/latest/specific offset) |
+| POST | `/api/v1/consumer-groups/{groupId}/offsets/reset-by-time` | Reset consumer offsets by timestamp |
 | POST | `/api/v1/consumer-groups/{groupId}/offsets/copy` | Copy offsets from another group |
 
 ### Messages
@@ -251,7 +252,20 @@ curl -X POST "http://localhost:8080/api/v1/consumer-groups/my-group/offsets/rese
   -H "Content-Type: application/json" \
   -d '{
     "topic": "my-topic",
+    "partition": 0,
     "resetStrategy": "earliest"
+  }'
+```
+
+### Reset Consumer Offsets By Timestamp
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/consumer-groups/my-group/offsets/reset-by-time?bootstrapServers=broker1:9092" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "my-topic",
+    "partition": 0,
+    "timestamp": 1704067200000
   }'
 ```
 
@@ -275,9 +289,30 @@ curl -X POST "http://localhost:8080/api/v1/messages/produce?bootstrapServers=bro
   -H "Content-Type: application/json" \
   -d '{
     "topic": "my-topic",
+    "partition": 0,
     "records": [
       {"key": "key1", "value": "value1"},
-      {"key": "key2", "value": "value2"}
+      {"key": "key2", "value": "value2", "timestamp": 1704067200000}
+    ]
+  }'
+```
+
+### Produce Messages with Headers
+
+```bash
+curl -X POST "http://localhost:8080/api/v1/messages/produce?bootstrapServers=broker1:9092" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "my-topic",
+    "records": [
+      {
+        "key": "key1",
+        "value": "value1",
+        "headers": {
+          "header1": "value1",
+          "header2": "value2"
+        }
+      }
     ]
   }'
 ```
