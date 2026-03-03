@@ -161,7 +161,7 @@ public class ConsumerService {
             Map<TopicPartition, OffsetAndMetadata> targetOffsets = new HashMap<>();
             for (Map.Entry<TopicPartition, OffsetAndMetadata> entry : sourceOffsets.entrySet()) {
                 if (entry.getKey().topic().equals(request.getTopic())) {
-                    TopicPartition targetTp = new TopicPartition(groupId, entry.getKey().partition());
+                    TopicPartition targetTp = new TopicPartition(request.getTopic(), entry.getKey().partition());
                     targetOffsets.put(targetTp, entry.getValue());
                 }
             }

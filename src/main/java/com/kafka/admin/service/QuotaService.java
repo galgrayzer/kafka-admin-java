@@ -82,11 +82,11 @@ public class QuotaService {
             ClientQuotaEntity entity = new ClientQuotaEntity(entityMap);
             List<ClientQuotaAlteration.Op> ops = new ArrayList<>();
             
-            if (0 <= request.getBytesInQuota()) {
+            if (request.getBytesInQuota() != null) {
                 ops.add(new ClientQuotaAlteration.Op("producer_byte_rate", request.getBytesInQuota().doubleValue()));
             }
             
-            if (0 <= request.getBytesOutQuota()) {
+            if (request.getBytesOutQuota() != null) {
                 ops.add(new ClientQuotaAlteration.Op("consumer_byte_rate", request.getBytesOutQuota().doubleValue()));
             }
 

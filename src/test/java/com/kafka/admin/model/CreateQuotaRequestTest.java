@@ -11,8 +11,8 @@ class CreateQuotaRequestTest {
     void testDefaultValues() {
         CreateQuotaRequest request = new CreateQuotaRequest();
         
-        assertEquals(0L, request.getBytesInQuota());
-        assertEquals(0L, request.getBytesOutQuota());
+        assertNull(request.getBytesInQuota());
+        assertNull(request.getBytesOutQuota());
         assertNull(request.getUsername());
     }
 
