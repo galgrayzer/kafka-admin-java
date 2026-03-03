@@ -1,6 +1,7 @@
 package com.kafka.admin.service;
 
 import com.kafka.admin.client.KafkaAdminClientFactory;
+import com.kafka.admin.config.KafkaAdminConfig;
 import com.kafka.admin.model.request.FetchMessagesRequest;
 import com.kafka.admin.model.request.ProduceMessagesRequest;
 import com.kafka.admin.model.response.ConsumerOffsetResponse;
@@ -13,6 +14,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
@@ -27,9 +29,11 @@ import java.util.*;
 public class MessageService {
 
     private final KafkaAdminClientFactory adminClientFactory;
+    private final KafkaAdminConfig config;
 
-    public MessageService(KafkaAdminClientFactory adminClientFactory) {
+    public MessageService(KafkaAdminClientFactory adminClientFactory, KafkaAdminConfig config) {
         this.adminClientFactory = adminClientFactory;
+        this.config = config;
     }
 
     public List<ConsumerOffsetResponse> getTopicOffsets(
@@ -130,11 +134,25 @@ public class MessageService {
         try (KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {
             for (ProduceMessagesRequest.ProducerRecord record : request.getRecords()) {
                 ProducerRecord<String, String> producerRecord;
-                if (request.getPartition() != null) {
-                    producerRecord = new ProducerRecord<>(request.getTopic(), request.getPartition(), 
-                            record.getTimestamp(), record.getKey(), record.getValue());
+                
+                if (record.getHeaders() != null && !record.getHeaders().isEmpty()) {
+                    var headers = new RecordHeaders();
+                    record.getHeaders().forEach((key, value) -> headers.add(key, value.getBytes()));
+                    
+                    if (request.getPartition() != null) {
+                        producerRecord = new ProducerRecord<>(request.getTopic(), request.getPartition(), 
+                                record.getTimestamp(), record.getKey(), record.getValue(), headers);
+                    } else {
+                        producerRecord = new ProducerRecord<>(request.getTopic(), null, 
+                                record.getTimestamp(), record.getKey(), record.getValue(), headers);
+                    }
                 } else {
-                    producerRecord = new ProducerRecord<>(request.getTopic(), record.getKey(), record.getValue());
+                    if (request.getPartition() != null) {
+                        producerRecord = new ProducerRecord<>(request.getTopic(), request.getPartition(), 
+                                record.getTimestamp(), record.getKey(), record.getValue());
+                    } else {
+                        producerRecord = new ProducerRecord<>(request.getTopic(), record.getKey(), record.getValue());
+                    }
                 }
                 producer.send(producerRecord);
                 count++;
@@ -173,12 +191,33 @@ public class MessageService {
 
     private void applySecurityProperties(Properties props, String bootstrapServers, String securityProtocol,
             String username, String password, String saslMechanism) {
-        if (securityProtocol != null && (securityProtocol.equals("SASL_PLAINTEXT") || securityProtocol.equals("SASL_SSL"))) {
-            props.put("security.protocol", securityProtocol);
-            props.put("sasl.mechanism", saslMechanism != null ? saslMechanism : "SCRAM-SHA-256");
+        
+        if (securityProtocol == null) {
+            securityProtocol = config.getDefaultSecurityProtocol();
+        }
+        if (saslMechanism == null) {
+            saslMechanism = config.getDefaultSaslMechanism();
+        }
+        if (username == null) {
+            username = config.getDefaultUsername();
+        }
+        if (password == null) {
+            password = config.getDefaultPassword();
+        }
+        
+        props.put("security.protocol", securityProtocol);
+        
+        if (securityProtocol.equals("SASL_PLAINTEXT") || securityProtocol.equals("SASL_SSL")) {
+            props.put("sasl.mechanism", saslMechanism);
+            
             if (username != null && password != null) {
-                props.put("sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required " +
-                        "username=\"" + username + "\" password=\"" + password + "\";");
+                if ("PLAIN".equalsIgnoreCase(saslMechanism)) {
+                    props.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+                            "username=\"" + username + "\" password=\"" + password + "\";");
+                } else {
+                    props.put("sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required " +
+                            "username=\"" + username + "\" password=\"" + password + "\";");
+                }
             }
         }
     }
