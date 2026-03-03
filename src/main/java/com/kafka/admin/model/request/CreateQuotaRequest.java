@@ -7,9 +7,9 @@ public class CreateQuotaRequest {
     @NotBlank(message = "Username is required")
     private String username;
 
-    private Long bytesInQuota = 0L;
+    private Long bytesInQuota;
 
-    private Long bytesOutQuota = 0L;
+    private Long bytesOutQuota;
 
     public String getUsername() {
         return username;
