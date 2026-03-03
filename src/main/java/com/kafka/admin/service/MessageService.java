@@ -75,45 +75,60 @@ public class MessageService {
             @Nullable String saslMechanism) throws Exception {
 
         Properties props = createConsumerProperties(bootstrapServers, securityProtocol, username, password, saslMechanism);
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, request.getMaxMessages() != null ? request.getMaxMessages() : 100);
+        props.remove(ConsumerConfig.GROUP_ID_CONFIG);
+        
+        int maxMessages = request.getMaxMessages() != null ? request.getMaxMessages() : 100;
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxMessages);
 
         List<MessageResponse> messages = new ArrayList<>();
 
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
-            TopicPartition tp = new TopicPartition(request.getTopic(), 
-                    request.getPartition() != null ? request.getPartition() : 0);
+        try (Admin admin = adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism);
+             KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
 
-            if (request.getOffset() != null) {
-                consumer.assign(Collections.singletonList(tp));
-                consumer.seek(tp, request.getOffset());
-            } else if ("earliest".equalsIgnoreCase(request.getStartingPosition())) {
-                consumer.assign(Collections.singletonList(tp));
-                consumer.seekToBeginning(Collections.singletonList(tp));
-            } else if ("latest".equalsIgnoreCase(request.getStartingPosition())) {
-                consumer.assign(Collections.singletonList(tp));
-                consumer.seekToEnd(Collections.singletonList(tp));
-            } else if (request.getTimestamp() != null) {
-                ListOffsetsResult result = adminClientFactory.createAdminClient(
-                        bootstrapServers, securityProtocol, username, password, saslMechanism)
-                        .listOffsets(Map.of(tp, OffsetSpec.forTimestamp(request.getTimestamp())));
-                ListOffsetsResult.ListOffsetsResultInfo offsetInfo = result.partitionResult(tp).get();
-                consumer.assign(Collections.singletonList(tp));
-                consumer.seek(tp, offsetInfo.offset());
+            DescribeTopicsResult topicResult = admin.describeTopics(Collections.singletonList(request.getTopic()));
+            TopicDescription topicDesc = topicResult.allTopicNames().get().get(request.getTopic());
+
+            List<TopicPartition> partitions = new ArrayList<>();
+            if (request.getPartition() != null) {
+                partitions.add(new TopicPartition(request.getTopic(), request.getPartition()));
             } else {
-                consumer.assign(Collections.singletonList(tp));
-                consumer.seekToBeginning(Collections.singletonList(tp));
+                for (TopicPartitionInfo tpInfo : topicDesc.partitions()) {
+                    partitions.add(new TopicPartition(request.getTopic(), tpInfo.partition()));
+                }
             }
 
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10));
-            for (ConsumerRecord<String, String> record : records) {
-                MessageResponse response = new MessageResponse();
-                response.setTopic(record.topic());
-                response.setPartition(record.partition());
-                response.setOffset(record.offset());
-                response.setTimestamp(record.timestamp());
-                response.setKey(record.key());
-                response.setValue(record.value());
-                messages.add(response);
+            for (TopicPartition tp : partitions) {
+                consumer.assign(Collections.singletonList(tp));
+
+                if (request.getOffset() != null) {
+                    consumer.seek(tp, request.getOffset());
+                } else if ("earliest".equalsIgnoreCase(request.getStartingPosition())) {
+                    consumer.seekToBeginning(Collections.singletonList(tp));
+                } else if ("latest".equalsIgnoreCase(request.getStartingPosition())) {
+                    consumer.seekToEnd(Collections.singletonList(tp));
+                    long endOffset = consumer.position(tp);
+                    long startOffset = Math.max(0, endOffset - maxMessages);
+                    consumer.seek(tp, startOffset);
+                } else if (request.getTimestamp() != null) {
+                    ListOffsetsResult result = admin.listOffsets(Map.of(tp, OffsetSpec.forTimestamp(request.getTimestamp())));
+                    ListOffsetsResult.ListOffsetsResultInfo offsetInfo = result.partitionResult(tp).get();
+                    consumer.seek(tp, offsetInfo.offset());
+                } else {
+                    consumer.seekToBeginning(Collections.singletonList(tp));
+                }
+
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10));
+                for (ConsumerRecord<String, String> record : records) {
+                    MessageResponse response = new MessageResponse();
+                    response.setTopic(record.topic());
+                    response.setPartition(record.partition());
+                    response.setOffset(record.offset());
+                    response.setTimestamp(record.timestamp());
+                    response.setKey(record.key());
+                    response.setValue(record.value());
+                    messages.add(response);
+                }
             }
         }
 
