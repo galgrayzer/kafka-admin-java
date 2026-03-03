@@ -403,11 +403,27 @@ Content-Type: application/json
 
 {
   "topic": "my-topic",
+  "partition": 0,
   "resetStrategy": "earliest"
 }
 ```
 
-Valid reset strategies: `earliest`, `latest`, or specific offset.
+Valid reset strategies: `earliest`, `latest`, or specific offset. If partition is omitted, resets all partitions.
+
+### Reset Consumer Offsets By Timestamp
+
+```http
+POST /api/v1/consumer-groups/{groupId}/offsets/reset-by-time?bootstrapServers=broker1:9092
+Content-Type: application/json
+
+{
+  "topic": "my-topic",
+  "partition": 0,
+  "timestamp": 1704067200000
+}
+```
+
+If partition is omitted, resets all partitions.
 
 ### Copy Consumer Offsets
 
@@ -466,9 +482,28 @@ Content-Type: application/json
 
 {
   "topic": "my-topic",
+  "partition": 0,
   "records": [
     {"key": "key1", "value": "value1"},
     {"key": "key2", "value": "value2", "timestamp": 1234567890}
+  ]
+}
+```
+
+**Produce with Headers:**
+
+```json
+{
+  "topic": "my-topic",
+  "records": [
+    {
+      "key": "key1",
+      "value": "value1",
+      "headers": {
+        "header1": "value1",
+        "header2": "value2"
+      }
+    }
   ]
 }
 ```
