@@ -94,7 +94,8 @@ Priority order (highest to lowest):
 
 ### ClusterLinkService
 - Manages cluster links and mirror topics
-- Uses `NewClusterLink`, `listClusterLinks`, `createMirrorTopics`
+- Uses `NewClusterLink`, `describeClusterLinks`, `createClusterLinks`, `deleteClusterLinks`
+- Mirror operations: `reverseAndStart`, `truncateAndRestore`, `failover`, `promote` (per-topic)
 
 ### ConsumerService
 - Manages consumer group offsets

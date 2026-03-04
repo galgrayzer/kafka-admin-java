@@ -4,6 +4,7 @@ import com.kafka.admin.constants.AdminConstants;
 import com.kafka.admin.config.KafkaAdminConfig;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.ConfluentAdmin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -27,7 +28,8 @@ public class KafkaAdminClientFactory {
             @Nullable String securityProtocol,
             @Nullable String username,
             @Nullable String password,
-            @Nullable String saslMechanism) {
+            @Nullable String saslMechanism,
+            @Nullable Boolean confluentAdmin) {
 
         String finalBootstrapServers = Optional.ofNullable(bootstrapServers)
                 .orElse(config.getDefaultBootstrapServers());
@@ -41,7 +43,7 @@ public class KafkaAdminClientFactory {
         if (finalSecurityProtocol.equals(SecurityProtocol.SASL_PLAINTEXT.name()) ||
                 finalSecurityProtocol.equals(SecurityProtocol.SASL_SSL.name())) {
             props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, finalSecurityProtocol);
-            
+
             String finalUsername = Optional.ofNullable(username)
                     .orElse(config.getDefaultUsername());
             String finalPassword = Optional.ofNullable(password)
@@ -51,7 +53,7 @@ public class KafkaAdminClientFactory {
 
             if (finalUsername != null && finalPassword != null) {
                 props.put(SaslConfigs.SASL_MECHANISM, finalSaslMechanism);
-                props.put(SaslConfigs.SASL_JAAS_CONFIG, 
+                props.put(SaslConfigs.SASL_JAAS_CONFIG,
                         "org.apache.kafka.common.security.scram.ScramLoginModule required " +
                         "username=\"" + finalUsername + "\" " +
                         "password=\"" + finalPassword + "\";");
@@ -61,7 +63,20 @@ public class KafkaAdminClientFactory {
             props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, finalSecurityProtocol);
         }
 
+        if (Boolean.TRUE.equals(confluentAdmin)) {
+            return ConfluentAdmin.create(props);
+        }
+
         return Admin.create(props);
+    }
+
+    public Admin createAdminClient(
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String username,
+            @Nullable String password,
+            @Nullable String saslMechanism) {
+        return this.createAdminClient(bootstrapServers, securityProtocol, username, password, saslMechanism, false);
     }
 
     public Map<String, Object> createProperties(

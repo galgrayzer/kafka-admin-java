@@ -327,16 +327,28 @@ Content-Type: application/json
 }
 ```
 
+### Reverse and Start
+
+```http
+POST /api/v1/cluster-links/{linkName}/topics/{topicName}/reverse-and-start?bootstrapServers=broker1:9092
+```
+
+### Truncate and Restore
+
+```http
+POST /api/v1/cluster-links/{linkName}/topics/{topicName}/truncate-and-restore?bootstrapServers=broker1:9092
+```
+
 ### Failover
 
 ```http
-POST /api/v1/cluster-links/{linkName}/failover?bootstrapServers=broker1:9092
-Content-Type: application/json
+POST /api/v1/cluster-links/{linkName}/topics/{topicName}/failover?bootstrapServers=broker1:9092
+```
 
-{
-  "primaryClusterId": "source-cluster",
-  "failoverMode": "leader"
-}
+### Promote
+
+```http
+POST /api/v1/cluster-links/{linkName}/topics/{topicName}/promote?bootstrapServers=broker1:9092
 ```
 
 ---

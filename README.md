@@ -151,10 +151,10 @@ GET /api/v1/topics?bootstrapServers=broker1:9092,broker2:9092
 | POST | `/api/v1/cluster-links` | Create a cluster link |
 | DELETE | `/api/v1/cluster-links/{linkName}` | Delete a cluster link |
 | POST | `/api/v1/cluster-links/{linkName}/mirror-topics` | Create mirror topics |
-| POST | `/api/v1/cluster-links/{linkName}/reverse-and-start` | Reverse and start replication |
-| POST | `/api/v1/cluster-links/{linkName}/truncate-and-restore` | Truncate and restore |
-| POST | `/api/v1/cluster-links/{linkName}/failover` | Failover to mirror cluster |
-| POST | `/api/v1/cluster-links/{linkName}/promote` | Promote mirror to primary |
+| POST | `/api/v1/cluster-links/{linkName}/topics/{topicName}/reverse-and-start` | Reverse and start replication |
+| POST | `/api/v1/cluster-links/{linkName}/topics/{topicName}/truncate-and-restore` | Truncate and restore |
+| POST | `/api/v1/cluster-links/{linkName}/topics/{topicName}/failover` | Failover to mirror cluster |
+| POST | `/api/v1/cluster-links/{linkName}/topics/{topicName}/promote` | Promote mirror to primary |
 
 ## Example Requests
 

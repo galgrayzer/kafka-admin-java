@@ -52,7 +52,7 @@ export KAFKA_ADMIN_DEFAULT_SASL_MECHANISM="PLAIN"
 ./mvnw test -Dtest=ClusterLinkServiceTest
 
 # Run specific test method
-./mvnw test -Dtest=ClusterLinkServiceTest#testListClusterLinksThrowsUnsupportedOperationException
+./mvnw test -Dtest=ClusterLinkServiceTest#testListClusterLinks
 
 # Skip tests during build
 ./mvnw clean package -DskipTests
