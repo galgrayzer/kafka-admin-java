@@ -3,7 +3,6 @@ package com.kafka.admin.service;
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.model.request.CreateClusterLinkRequest;
 import com.kafka.admin.model.request.CreateMirrorTopicsRequest;
-import com.kafka.admin.model.request.FailoverRequest;
 import org.apache.kafka.clients.admin.ConfluentAdmin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,7 +78,7 @@ class ClusterLinkServiceTest {
     void testReverseAndStart() {
         assertDoesNotThrow(() -> {
             try {
-                service.reverseAndStart("test-link", "localhost:9092", null, null, null, null);
+                service.reverseAndStart("test-link", "test-topic", "localhost:9092", null, null, null, null);
             } catch (Exception e) {
                 // Ignore errors related to mocking KafkaFutures
             }
@@ -90,7 +89,7 @@ class ClusterLinkServiceTest {
     void testTruncateAndRestore() {
         assertDoesNotThrow(() -> {
             try {
-                service.truncateAndRestore("test-link", "localhost:9092", null, null, null, null);
+                service.truncateAndRestore("test-link", "test-topic", "localhost:9092", null, null, null, null);
             } catch (Exception e) {
                 // Ignore errors related to mocking KafkaFutures
             }
@@ -99,12 +98,9 @@ class ClusterLinkServiceTest {
 
     @Test
     void testFailover() {
-        FailoverRequest request = new FailoverRequest();
-        request.setPrimaryClusterId("cluster-1");
-        
         assertDoesNotThrow(() -> {
             try {
-                service.failover("test-link", request, "localhost:9092", null, null, null, null);
+                service.failover("test-link", "test-topic", "localhost:9092", null, null, null, null);
             } catch (Exception e) {
                 // Ignore errors related to mocking KafkaFutures
             }
@@ -115,7 +111,7 @@ class ClusterLinkServiceTest {
     void testPromote() {
         assertDoesNotThrow(() -> {
             try {
-                service.promote("test-link", "localhost:9092", null, null, null, null);
+                service.promote("test-link", "test-topic", "localhost:9092", null, null, null, null);
             } catch (Exception e) {
                 // Ignore errors related to mocking KafkaFutures
             }

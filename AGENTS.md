@@ -20,7 +20,7 @@ mvn test
 mvn test -Dtest=ClusterLinkServiceTest
 
 # Run a specific test method
-mvn test -Dtest=ClusterLinkServiceTest#testListClusterLinksThrowsUnsupportedOperationException
+mvn test -Dtest=ClusterLinkServiceTest#testListClusterLinks
 
 # Skip tests during build
 mvn clean package -DskipTests
@@ -234,15 +234,18 @@ public class KafkaAdminExceptionHandler {
   import static org.junit.jupiter.api.Assertions.*;
   ```
 - Test class naming: `<ClassName>Test` (e.g., `ClusterLinkServiceTest`)
-- Test method naming: `test<MethodName><Scenario>` (e.g., `testListClusterLinksThrowsUnsupportedOperationException`)
+- Test method naming: `test<MethodName><Scenario>` (e.g., `testListClusterLinks`)
 
 ```java
 class ClusterLinkServiceTest {
 
     @Test
-    void testListClusterLinksThrowsUnsupportedOperationException() {
-        ClusterLinkService service = new ClusterLinkService(null);
-        assertThrows(UnsupportedOperationException.class, () ->
+    void testListClusterLinks() {
+        KafkaAdminClientFactory factory = mock(KafkaAdminClientFactory.class);
+        when(factory.createAdminClient(any(), any(), any(), any(), any())).thenReturn(mock(Admin.class));
+        ClusterLinkService service = new ClusterLinkService(factory);
+        
+        assertDoesNotThrow(() -> 
             service.listClusterLinks("localhost:9092", null, null, null, null)
         );
     }

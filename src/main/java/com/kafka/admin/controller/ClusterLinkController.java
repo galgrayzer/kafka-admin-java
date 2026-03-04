@@ -84,60 +84,63 @@ public class ClusterLinkController {
         return ApiResponse.success("Mirror topics created successfully", request.getTopics());
     }
 
-    @PostMapping("/{linkName}/reverse-and-start")
-    @Operation(summary = "Reverse and start", description = "Reverse replication direction and start")
+    @PostMapping("/{linkName}/topics/{topicName}/reverse-and-start")
+    @Operation(summary = "Reverse and start", description = "Reverse replication direction and start for a specific topic")
     public ApiResponse reverseAndStart(
             @Parameter(description = "Link name") @PathVariable String linkName,
+            @Parameter(description = "Topic name") @PathVariable String topicName,
             @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
             @RequestParam(required = false) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
-        clusterLinkService.reverseAndStart(linkName, ctx.bootstrapServers(), ctx.securityProtocol(), 
+        clusterLinkService.reverseAndStart(linkName, topicName, ctx.bootstrapServers(), ctx.securityProtocol(), 
                 ctx.username(), ctx.password(), ctx.saslMechanism());
-        return ApiResponse.success("Reverse and start completed", linkName);
+        return ApiResponse.success("Reverse and start completed", topicName);
     }
 
-    @PostMapping("/{linkName}/truncate-and-restore")
-    @Operation(summary = "Truncate and restore", description = "Truncate and restore topics")
+    @PostMapping("/{linkName}/topics/{topicName}/truncate-and-restore")
+    @Operation(summary = "Truncate and restore", description = "Truncate and restore a specific topic")
     public ApiResponse truncateAndRestore(
             @Parameter(description = "Link name") @PathVariable String linkName,
+            @Parameter(description = "Topic name") @PathVariable String topicName,
             @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
             @RequestParam(required = false) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
-        clusterLinkService.truncateAndRestore(linkName, ctx.bootstrapServers(), ctx.securityProtocol(), 
+        clusterLinkService.truncateAndRestore(linkName, topicName, ctx.bootstrapServers(), ctx.securityProtocol(), 
                 ctx.username(), ctx.password(), ctx.saslMechanism());
-        return ApiResponse.success("Truncate and restore completed", linkName);
+        return ApiResponse.success("Truncate and restore completed", topicName);
     }
 
-    @PostMapping("/{linkName}/failover")
-    @Operation(summary = "Failover", description = "Failover to mirror cluster")
+    @PostMapping("/{linkName}/topics/{topicName}/failover")
+    @Operation(summary = "Failover", description = "Failover to mirror cluster for a specific topic")
     public ApiResponse failover(
             @Parameter(description = "Link name") @PathVariable String linkName,
-            @Valid @RequestBody FailoverRequest request,
+            @Parameter(description = "Topic name") @PathVariable String topicName,
             @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
             @RequestParam(required = false) String bootstrapServers,
             HttpServletRequest requestHttp) throws Exception {
         
         var ctx = contextExtractor.extract(requestHttp);
-        clusterLinkService.failover(linkName, request, ctx.bootstrapServers(), ctx.securityProtocol(), 
+        clusterLinkService.failover(linkName, topicName, ctx.bootstrapServers(), ctx.securityProtocol(), 
                 ctx.username(), ctx.password(), ctx.saslMechanism());
-        return ApiResponse.success("Failover completed", linkName);
+        return ApiResponse.success("Failover completed", topicName);
     }
 
-    @PostMapping("/{linkName}/promote")
+    @PostMapping("/{linkName}/topics/{topicName}/promote")
     @Operation(summary = "Promote", description = "Promote mirror topic to primary")
     public ApiResponse promote(
             @Parameter(description = "Link name") @PathVariable String linkName,
+            @Parameter(description = "Topic name") @PathVariable String topicName,
             @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
             @RequestParam(required = false) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
-        clusterLinkService.promote(linkName, ctx.bootstrapServers(), ctx.securityProtocol(), 
+        clusterLinkService.promote(linkName, topicName, ctx.bootstrapServers(), ctx.securityProtocol(), 
                 ctx.username(), ctx.password(), ctx.saslMechanism());
-        return ApiResponse.success("Promote completed", linkName);
+        return ApiResponse.success("Promote completed", topicName);
     }
 }
