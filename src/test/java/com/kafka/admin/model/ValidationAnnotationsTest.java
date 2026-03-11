@@ -1,63 +1,218 @@
 package com.kafka.admin.model;
 
 import com.kafka.admin.model.request.*;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ValidationAnnotationsTest {
 
+    private Validator validator;
+
+    @BeforeEach
+    void setUp() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
+
     @Test
-    void testCreateTopicRequestValidation() {
+    void testCreateTopicRequestValidInput() {
+        // Given
         CreateTopicRequest request = new CreateTopicRequest();
         request.setName("test-topic");
         request.setPartitions(3);
         request.setReplicationFactor((short) 1);
         request.setConfigs(Map.of("cleanup.policy", "delete"));
-        
-        assertEquals("test-topic", request.getName());
-        assertEquals(3, (int) request.getPartitions());
-        assertEquals(1, (int) request.getReplicationFactor());
-        assertEquals("delete", request.getConfigs().get("cleanup.policy"));
+
+        // When
+        Set<ConstraintViolation<CreateTopicRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 
     @Test
-    void testGrantProducerAclRequest() {
+    void testCreateTopicRequestBlankName() {
+        // Given
+        CreateTopicRequest request = new CreateTopicRequest();
+        request.setName("");
+        request.setPartitions(3);
+        request.setReplicationFactor((short) 1);
+
+        // When
+        Set<ConstraintViolation<CreateTopicRequest>> violations = validator.validate(request);
+
+        // Then
+        assertEquals(1, violations.size());
+        ConstraintViolation<CreateTopicRequest> violation = violations.iterator().next();
+        assertEquals("Topic name is required", violation.getMessage());
+        assertEquals("name", violation.getPropertyPath().toString());
+    }
+
+    @Test
+    void testCreateTopicRequestNullName() {
+        // Given
+        CreateTopicRequest request = new CreateTopicRequest();
+        request.setName(null);
+        request.setPartitions(3);
+        request.setReplicationFactor((short) 1);
+
+        // When
+        Set<ConstraintViolation<CreateTopicRequest>> violations = validator.validate(request);
+
+        // Then
+        assertEquals(1, violations.size());
+        ConstraintViolation<CreateTopicRequest> violation = violations.iterator().next();
+        assertEquals("Topic name is required", violation.getMessage());
+    }
+
+    @Test
+    void testCreateTopicRequestNullPartitions() {
+        // Given
+        CreateTopicRequest request = new CreateTopicRequest();
+        request.setName("test-topic");
+        request.setPartitions(null);
+        request.setReplicationFactor((short) 1);
+
+        // When
+        Set<ConstraintViolation<CreateTopicRequest>> violations = validator.validate(request);
+
+        // Then
+        assertEquals(1, violations.size());
+        ConstraintViolation<CreateTopicRequest> violation = violations.iterator().next();
+        assertEquals("Partitions is required", violation.getMessage());
+    }
+
+    @Test
+    void testCreateTopicRequestZeroPartitions() {
+        // Given
+        CreateTopicRequest request = new CreateTopicRequest();
+        request.setName("test-topic");
+        request.setPartitions(0);
+        request.setReplicationFactor((short) 1);
+
+        // When
+        Set<ConstraintViolation<CreateTopicRequest>> violations = validator.validate(request);
+
+        // Then
+        assertEquals(1, violations.size());
+        ConstraintViolation<CreateTopicRequest> violation = violations.iterator().next();
+        assertEquals("At least 1 partition is required", violation.getMessage());
+    }
+
+    @Test
+    void testCreateTopicRequestNullReplicationFactor() {
+        // Given
+        CreateTopicRequest request = new CreateTopicRequest();
+        request.setName("test-topic");
+        request.setPartitions(3);
+        request.setReplicationFactor(null);
+
+        // When
+        Set<ConstraintViolation<CreateTopicRequest>> violations = validator.validate(request);
+
+        // Then
+        assertEquals(1, violations.size());
+        ConstraintViolation<CreateTopicRequest> violation = violations.iterator().next();
+        assertEquals("Replication factor is required", violation.getMessage());
+    }
+
+    @Test
+    void testCreateTopicRequestZeroReplicationFactor() {
+        // Given
+        CreateTopicRequest request = new CreateTopicRequest();
+        request.setName("test-topic");
+        request.setPartitions(3);
+        request.setReplicationFactor((short) 0);
+
+        // When
+        Set<ConstraintViolation<CreateTopicRequest>> violations = validator.validate(request);
+
+        // Then
+        assertEquals(1, violations.size());
+        ConstraintViolation<CreateTopicRequest> violation = violations.iterator().next();
+        assertEquals("Replication factor must be at least 1", violation.getMessage());
+    }
+
+    @Test
+    void testCreateTopicRequestMultipleViolations() {
+        // Given
+        CreateTopicRequest request = new CreateTopicRequest();
+        request.setName("");
+        request.setPartitions(0);
+        request.setReplicationFactor((short) 0);
+
+        // When
+        Set<ConstraintViolation<CreateTopicRequest>> violations = validator.validate(request);
+
+        // Then
+        assertEquals(3, violations.size());
+        
+        List<String> messages = violations.stream()
+                .map(ConstraintViolation::getMessage)
+                .sorted()
+                .toList();
+        
+        assertTrue(messages.contains("Topic name is required"));
+        assertTrue(messages.contains("At least 1 partition is required"));
+        assertTrue(messages.contains("Replication factor must be at least 1"));
+    }
+
+    @Test
+    void testGrantProducerAclRequestValidInput() {
+        // Given
         GrantProducerAclRequest request = new GrantProducerAclRequest();
         request.setTopic("test-topic");
         request.setTransactionId("tx-123");
-        
-        assertEquals("test-topic", request.getTopic());
-        assertEquals("tx-123", request.getTransactionId());
+
+        // When
+        Set<ConstraintViolation<GrantProducerAclRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 
     @Test
-    void testGrantConsumerAclRequest() {
+    void testGrantConsumerAclRequestValidInput() {
+        // Given
         GrantConsumerAclRequest request = new GrantConsumerAclRequest();
         request.setTopic("test-topic");
         request.setGroup("consumer-group");
-        
-        assertEquals("test-topic", request.getTopic());
-        assertEquals("consumer-group", request.getGroup());
+
+        // When
+        Set<ConstraintViolation<GrantConsumerAclRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 
     @Test
-    void testCreateUserRequest() {
+    void testCreateUserRequestValidInput() {
+        // Given
         CreateUserRequest request = new CreateUserRequest();
         request.setUsername("testuser");
         request.setPassword("password");
         request.setMechanism("SCRAM-SHA-512");
-        
-        assertEquals("testuser", request.getUsername());
-        assertEquals("password", request.getPassword());
-        assertEquals("SCRAM-SHA-512", request.getMechanism());
+
+        // When
+        Set<ConstraintViolation<CreateUserRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 
     @Test
-    void testCreateAclRequest() {
+    void testCreateAclRequestValidInput() {
+        // Given
         CreateAclRequest request = new CreateAclRequest();
         request.setResourceType("TOPIC");
         request.setResourceName("test-topic");
@@ -65,38 +220,51 @@ class ValidationAnnotationsTest {
         request.setHost("*");
         request.setOperation("READ");
         request.setPermission("ALLOW");
-        
-        assertEquals("TOPIC", request.getResourceType());
-        assertEquals("test-topic", request.getResourceName());
-        assertEquals("User:testuser", request.getPrincipal());
-        assertEquals("*", request.getHost());
-        assertEquals("READ", request.getOperation());
-        assertEquals("ALLOW", request.getPermission());
+
+        // When
+        Set<ConstraintViolation<CreateAclRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 
     @Test
-    void testCreateClusterLinkRequest() {
+    void testCreateClusterLinkRequestValidInput() {
+        // Given
         CreateClusterLinkRequest request = new CreateClusterLinkRequest();
         request.setLinkName("link-1");
         request.setSourceBootstrapServers("source:9092");
-        
-        assertEquals("link-1", request.getLinkName());
-        assertEquals("source:9092", request.getSourceBootstrapServers());
+
+        // When
+        Set<ConstraintViolation<CreateClusterLinkRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 
     @Test
-    void testCreateMirrorTopicsRequest() {
+    void testCreateMirrorTopicsRequestValidInput() {
+        // Given
         CreateMirrorTopicsRequest request = new CreateMirrorTopicsRequest();
         request.setTopics(List.of("topic1", "topic2"));
-        
-        assertEquals(2, request.getTopics().size());
+
+        // When
+        Set<ConstraintViolation<CreateMirrorTopicsRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 
     @Test
-    void testFailoverRequest() {
+    void testFailoverRequestValidInput() {
+        // Given
         FailoverRequest request = new FailoverRequest();
         request.setPrimaryClusterId("cluster-1");
-        
-        assertEquals("cluster-1", request.getPrimaryClusterId());
+
+        // When
+        Set<ConstraintViolation<FailoverRequest>> violations = validator.validate(request);
+
+        // Then
+        assertTrue(violations.isEmpty());
     }
 }

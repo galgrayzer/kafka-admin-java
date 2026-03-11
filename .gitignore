@@ -1,3 +1,6 @@
+# Kiro
+.kiro/
+
 # Maven
 target/
 pom.xml.tag
