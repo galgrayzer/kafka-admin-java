@@ -3,13 +3,13 @@
 2. [x] Remove unused fields in topicOffsets response dto
 3. [x] Default bootstrap.servers should be auto used on swagger
 4. [x] Bootstrap.servers should be a required param on all routes
-5. [ ] Default SASL mechanism not used
-6. [ ] User deletion doesnt work because SASL mechanism is null
+5. [x] Default SASL mechanism not used
+6. [x] User deletion doesnt work because SASL mechanism is null
 7. [x] Remove describe permissions from Consumer Group ACL on grant consumer
 8. [x] Add Cluster Linking describe mirror route
 9. [x] Reset offset with live consumer instances reading from the requested topic should result with more indicative error message
 10. [x] Error handler not returning all details (ex.getMessage() + ex.getCause().getMessage() should be returned)
-11. [ ] Reset offset by time should be used with Kafka admin client operation not self implementation logic
+11. [x] Reset offset by time should be used with Kafka admin client operation not self implementation logic
 12. [x] Reset offset by time DTO contains NotBlank on a long param resulting with validation error
 13. [x] List all quotas route should be under /cluster endpoint
 14. [x] Remove list all topics from topics endpoint
