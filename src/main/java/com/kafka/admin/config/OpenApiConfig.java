@@ -3,12 +3,9 @@ package com.kafka.admin.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
@@ -18,9 +15,6 @@ public class OpenApiConfig {
 
     @Value("${springdoc.api-docs.version:1.0.0}")
     private String apiVersion;
-
-    @Value("${server.port:8080}")
-    private int serverPort;
 
     @Bean
     public OpenAPI kafkaAdminOpenAPI() {
