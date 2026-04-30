@@ -1,8 +1,8 @@
 # Needed Fixes - Progress
 1. [x] Remove old fetch messages route
 2. [x] Remove unused fields in topicOffsets response dto
-3. [ ] Default bootstrap.servers should be auto used on swagger
-4. [ ] Bootstrap.servers should be a required param on all routes
+3. [x] Default bootstrap.servers should be auto used on swagger
+4. [x] Bootstrap.servers should be a required param on all routes
 5. [ ] Default SASL mechanism not used
 6. [ ] User deletion doesnt work because SASL mechanism is null
 7. [x] Remove describe permissions from Consumer Group ACL on grant consumer

@@ -31,7 +31,8 @@ public class MessageController {
     @Operation(summary = "Get topic offsets", description = "Get current offsets for a topic")
     public List<ConsumerOffsetResponse> getTopicOffsets(
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
@@ -45,7 +46,8 @@ public class MessageController {
             @Parameter(description = "Topic name") @PathVariable String topicName,
             @Parameter(description = "Partition number") @RequestParam(required = false) Integer partition,
             @Parameter(description = "Maximum messages to fetch") @RequestParam(required = false, defaultValue = "100") Integer maxMessages,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
@@ -60,7 +62,8 @@ public class MessageController {
             @Parameter(description = "Topic name") @PathVariable String topicName,
             @Parameter(description = "Partition number") @RequestParam(required = false) Integer partition,
             @Parameter(description = "Maximum messages to fetch") @RequestParam(required = false, defaultValue = "100") Integer maxMessages,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
@@ -76,7 +79,8 @@ public class MessageController {
             @Parameter(description = "Partition number") @RequestParam(required = false) Integer partition,
             @Parameter(description = "Timestamp in milliseconds") @RequestParam Long timestamp,
             @Parameter(description = "Maximum messages to fetch") @RequestParam(required = false, defaultValue = "100") Integer maxMessages,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
@@ -89,7 +93,8 @@ public class MessageController {
     @Operation(summary = "Produce messages", description = "Produce messages to a topic")
     public ApiResponse produceMessages(
             @Valid @RequestBody ProduceMessagesRequest produceRequest,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);

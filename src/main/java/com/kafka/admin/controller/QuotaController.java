@@ -32,8 +32,8 @@ public class QuotaController {
     @Operation(summary = "Create or alter a quota", description = "Create or alter a quota for user/client")
     public ApiResponse createQuota(
             @Valid @RequestBody CreateQuotaRequest createRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -46,8 +46,8 @@ public class QuotaController {
     @Operation(summary = "Delete a quota", description = "Delete a quota for user")
     public ApiResponse deleteQuota(
             @Parameter(description = "Username") @RequestParam String username,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -60,8 +60,8 @@ public class QuotaController {
     @Operation(summary = "Get user quota", description = "Get quota for a specific user")
     public QuotaResponse getUserQuota(
             @Parameter(description = "Username") @PathVariable String username,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);

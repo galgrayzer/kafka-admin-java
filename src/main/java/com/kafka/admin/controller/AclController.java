@@ -31,8 +31,8 @@ public class AclController {
     @GetMapping
     @Operation(summary = "List all ACLs", description = "Get a list of all ACLs in the Kafka cluster")
     public List<AclResponse> listAcls(
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -45,8 +45,8 @@ public class AclController {
     @Operation(summary = "Create an ACL", description = "Create a new ACL")
     public ApiResponse createAcl(
             @Valid @RequestBody CreateAclRequest createRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -64,8 +64,8 @@ public class AclController {
             @Parameter(description = "Host") @RequestParam(required = false) String host,
             @Parameter(description = "Operation") @RequestParam String operation,
             @Parameter(description = "Permission") @RequestParam String permission,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -81,8 +81,8 @@ public class AclController {
     public ApiResponse grantConsumerAcl(
             @Parameter(description = "Username") @PathVariable String username,
             @Valid @RequestBody GrantConsumerAclRequest aclRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -97,8 +97,8 @@ public class AclController {
     public ApiResponse grantProducerAcl(
             @Parameter(description = "Username") @PathVariable String username,
             @Valid @RequestBody GrantProducerAclRequest aclRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -112,8 +112,8 @@ public class AclController {
     public ApiResponse checkConsumerAcl(
             @Parameter(description = "Username") @PathVariable String username,
             @Parameter(description = "Topic name") @RequestParam String topic,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -127,8 +127,8 @@ public class AclController {
     public ApiResponse checkProducerAcl(
             @Parameter(description = "Username") @PathVariable String username,
             @Parameter(description = "Topic name") @RequestParam String topic,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -142,8 +142,8 @@ public class AclController {
     public ApiResponse revokeConsumerAcl(
             @Parameter(description = "Username") @PathVariable String username,
             @Valid @RequestBody GrantConsumerAclRequest aclRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -157,8 +157,8 @@ public class AclController {
     public ApiResponse revokeProducerAcl(
             @Parameter(description = "Username") @PathVariable String username,
             @Valid @RequestBody GrantProducerAclRequest aclRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);

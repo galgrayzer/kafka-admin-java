@@ -30,8 +30,8 @@ public class TopicController {
     @Operation(summary = "Get topic details", description = "Get detailed information about a specific topic")
     public TopicResponse getTopic(
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -44,8 +44,8 @@ public class TopicController {
     @Operation(summary = "Create a new topic", description = "Create a new Kafka topic")
     public ApiResponse createTopic(
             @Valid @RequestBody CreateTopicRequest createRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -58,8 +58,8 @@ public class TopicController {
     @Operation(summary = "Delete a topic", description = "Delete an existing Kafka topic")
     public ApiResponse deleteTopic(
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -73,8 +73,8 @@ public class TopicController {
     public ApiResponse updateTopicConfig(
             @Parameter(description = "Topic name") @PathVariable String topicName,
             @Valid @RequestBody UpdateTopicConfigRequest updateRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
