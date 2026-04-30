@@ -13,6 +13,22 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+public class MirrorTopicInfo {
+    private String topicName;
+    private String state;
+    private String sourceTopic;
+    private Long lag;
+
+    public String getTopicName() { return topicName; }
+    public void setTopicName(String topicName) { this.topicName = topicName; }
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+    public String getSourceTopic() { return sourceTopic; }
+    public void setSourceTopic(String sourceTopic) { this.sourceTopic = sourceTopic; }
+    public Long getLag() { return lag; }
+    public void setLag(Long lag) { this.lag = lag; }
+}
+
 @Service
 public class ClusterLinkService {
 
@@ -53,6 +69,36 @@ public class ClusterLinkService {
                             response.setConfigs(configMap);
                         }
                         return response;
+                    })
+                    .collect(Collectors.toList());
+        }
+    }
+
+    public List<MirrorTopicInfo> describeMirrorTopics(
+            String linkName,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String username,
+            @Nullable String password,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
+            
+            DescribeMirrorTopicsOptions options = new DescribeMirrorTopicsOptions();
+            if (linkName != null && !linkName.isEmpty()) {
+                options.linkNames(Collections.singletonList(linkName));
+            }
+            
+            Collection<MirrorTopicDescription> descriptions = admin.describeMirrorTopics(options).result().get();
+            
+            return descriptions.stream()
+                    .map(d -> {
+                        MirrorTopicInfo info = new MirrorTopicInfo();
+                        info.setTopicName(d.mirrorTopicName());
+                        info.setSourceTopic(d.sourceTopicName());
+                        info.setState(d.mirrorState().name());
+                        info.setLag(d.replicationLag());
+                        return info;
                     })
                     .collect(Collectors.toList());
         }

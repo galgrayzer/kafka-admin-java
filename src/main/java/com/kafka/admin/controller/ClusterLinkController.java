@@ -4,6 +4,7 @@ import com.kafka.admin.model.request.*;
 import com.kafka.admin.model.response.ApiResponse;
 import com.kafka.admin.model.response.ClusterLinkResponse;
 import com.kafka.admin.service.ClusterLinkService;
+import com.kafka.admin.service.ClusterLinkService.MirrorTopicInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +37,19 @@ public class ClusterLinkController {
         
         var ctx = contextExtractor.extract(request);
         return clusterLinkService.listClusterLinks(ctx.bootstrapServers(), ctx.securityProtocol(), 
+                ctx.username(), ctx.password(), ctx.saslMechanism());
+    }
+
+    @GetMapping("/{linkName}/mirror-topics")
+    @Operation(summary = "Describe mirror topics", description = "Get details of mirror topics on a cluster link")
+    public List<MirrorTopicInfo> describeMirrorTopics(
+            @Parameter(description = "Link name") @PathVariable String linkName,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
+            @RequestParam(required = false) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+        
+        var ctx = contextExtractor.extract(request);
+        return clusterLinkService.describeMirrorTopics(linkName, ctx.bootstrapServers(), ctx.securityProtocol(), 
                 ctx.username(), ctx.password(), ctx.saslMechanism());
     }
 
