@@ -8,7 +8,7 @@
 7. [x] Remove describe permissions from Consumer Group ACL on grant consumer
 8. [ ] Add Cluster Linking describe mirror route
 9. [ ] Reset offset with live consumer instances reading from the requested topic should result with more indicative error message
-10. [ ] Error handler not returning all details (ex.getMessage() + ex.getCause().getMessage() should be returned)
+10. [x] Error handler not returning all details (ex.getMessage() + ex.getCause().getMessage() should be returned)
 11. [ ] Reset offset by time should be used with Kafka admin client operation not self implementation logic
 12. [x] Reset offset by time DTO contains NotBlank on a long param resulting with validation error
 13. [ ] List all quotas route should be under /cluster endpoint

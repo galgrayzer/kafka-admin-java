@@ -54,13 +54,21 @@ public class KafkaAdminExceptionHandler {
 
     @ExceptionHandler(ExecutionException.class)
     public ResponseEntity<ApiResponse> handleExecutionException(ExecutionException ex) {
+        String message = "Operation failed: " + ex.getMessage();
+        if (ex.getCause() != null && ex.getCause().getMessage() != null) {
+            message += " - " + ex.getCause().getMessage();
+        }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Operation failed: " + ex.getCause().getMessage()));
+                .body(ApiResponse.error(message));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGenericException(Exception ex) {
+        String message = "Unexpected error: " + ex.getMessage();
+        if (ex.getCause() != null && ex.getCause().getMessage() != null) {
+            message += " - " + ex.getCause().getMessage();
+        }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Unexpected error: " + ex.getMessage()));
+                .body(ApiResponse.error(message));
     }
 }
