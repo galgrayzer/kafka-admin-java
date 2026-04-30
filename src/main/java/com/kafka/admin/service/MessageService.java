@@ -2,7 +2,6 @@ package com.kafka.admin.service;
 
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.config.KafkaAdminConfig;
-import com.kafka.admin.model.request.FetchMessagesRequest;
 import com.kafka.admin.model.request.ProduceMessagesRequest;
 import com.kafka.admin.model.response.ConsumerOffsetResponse;
 import com.kafka.admin.model.response.MessageResponse;
@@ -80,83 +79,6 @@ public class MessageService {
             }
             return responses;
         }
-    }
-
-    public List<MessageResponse> fetchMessages(
-            FetchMessagesRequest request,
-            String bootstrapServers,
-            @Nullable String securityProtocol,
-            @Nullable String username,
-            @Nullable String password,
-            @Nullable String saslMechanism) throws Exception {
-
-        Integer partition = request.getPartition();
-        Long offset = request.getOffset();
-        Long timestamp = request.getTimestamp();
-        String startingPosition = request.getStartingPosition();
-        Integer maxMessages = request.getMaxMessages() != null ? request.getMaxMessages() : 100;
-
-        if (timestamp != null) {
-            return fetchFromTimestamp(
-                    request.getTopic(),
-                    partition,
-                    timestamp,
-                    maxMessages,
-                    bootstrapServers,
-                    securityProtocol,
-                    username,
-                    password,
-                    saslMechanism);
-        }
-
-        if (offset != null) {
-            return fetchFromOffset(
-                    request.getTopic(),
-                    partition,
-                    offset,
-                    maxMessages,
-                    bootstrapServers,
-                    securityProtocol,
-                    username,
-                    password,
-                    saslMechanism);
-        }
-
-        if (startingPosition != null) {
-            if ("latest".equalsIgnoreCase(startingPosition)) {
-                return fetchFromOffset(
-                        request.getTopic(),
-                        partition,
-                        -1L,
-                        maxMessages,
-                        bootstrapServers,
-                        securityProtocol,
-                        username,
-                        password,
-                        saslMechanism);
-            }
-            return fetchFromOffset(
-                    request.getTopic(),
-                    partition,
-                    0L,
-                    maxMessages,
-                    bootstrapServers,
-                    securityProtocol,
-                    username,
-                    password,
-                    saslMechanism);
-        }
-
-        return fetchFromOffset(
-                request.getTopic(),
-                partition,
-                0L,
-                maxMessages,
-                bootstrapServers,
-                securityProtocol,
-                username,
-                password,
-                saslMechanism);
     }
 
     public List<MessageResponse> fetchFromOffset(

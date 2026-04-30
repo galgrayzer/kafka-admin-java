@@ -45,23 +45,4 @@ class RequestModelsTest {
         assertEquals("source-group", request.getSourceGroup());
         assertEquals("test-topic", request.getTopic());
     }
-
-    @Test
-    void testFetchMessagesRequest() {
-        FetchMessagesRequest request = new FetchMessagesRequest();
-        
-        request.setTopic("test-topic");
-        request.setPartition(0);
-        request.setOffset(100L);
-        request.setTimestamp(1704067200000L);
-        request.setMaxMessages(50);
-        request.setStartingPosition("earliest");
-        
-        assertEquals("test-topic", request.getTopic());
-        assertEquals(0, request.getPartition());
-        assertEquals(100L, request.getOffset());
-        assertEquals(1704067200000L, request.getTimestamp());
-        assertEquals(50, request.getMaxMessages());
-        assertEquals("earliest", request.getStartingPosition());
-    }
 }

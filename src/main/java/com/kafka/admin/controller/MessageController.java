@@ -1,6 +1,5 @@
 package com.kafka.admin.controller;
 
-import com.kafka.admin.model.request.FetchMessagesRequest;
 import com.kafka.admin.model.request.ProduceMessagesRequest;
 import com.kafka.admin.model.response.ApiResponse;
 import com.kafka.admin.model.response.ConsumerOffsetResponse;
@@ -83,18 +82,6 @@ public class MessageController {
         var ctx = contextExtractor.extract(request);
         return messageService.fetchFromTimestamp(topicName, partition, timestamp, maxMessages,
                 ctx.bootstrapServers(), ctx.securityProtocol(),
-                ctx.username(), ctx.password(), ctx.saslMechanism());
-    }
-
-    @PostMapping("/fetch")
-    @Operation(summary = "Fetch messages", description = "Fetch messages from a topic (legacy endpoint)")
-    public List<MessageResponse> fetchMessages(
-            @Valid @RequestBody FetchMessagesRequest fetchRequest,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
-            HttpServletRequest request) throws Exception {
-
-        var ctx = contextExtractor.extract(request);
-        return messageService.fetchMessages(fetchRequest, ctx.bootstrapServers(), ctx.securityProtocol(),
                 ctx.username(), ctx.password(), ctx.saslMechanism());
     }
 
