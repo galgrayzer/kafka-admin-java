@@ -12,7 +12,7 @@
 11. [ ] Reset offset by time should be used with Kafka admin client operation not self implementation logic
 12. [x] Reset offset by time DTO contains NotBlank on a long param resulting with validation error
 13. [ ] List all quotas route should be under /cluster endpoint
-14. [ ] Remove list all topics from topics endpoint
+14. [x] Remove list all topics from topics endpoint
 15. [ ] Quota response should return the value in a string in bytes, without any `E`
 16. [ ] OpenAPI config should be without pre given servers
 17. [ ] Need to add authenticate check route that check if a user can authenticate to the cluster with a given username and password and result with false if not 

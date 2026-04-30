@@ -13,8 +13,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1/topics")
 @Tag(name = "Topics", description = "Kafka topic management operations")
@@ -26,18 +24,6 @@ public class TopicController {
     public TopicController(TopicService topicService, RequestContextExtractor contextExtractor) {
         this.topicService = topicService;
         this.contextExtractor = contextExtractor;
-    }
-
-    @GetMapping
-    @Operation(summary = "List all topics", description = "Get a list of all topics in the Kafka cluster")
-    public List<TopicResponse> listTopics(
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
-            HttpServletRequest request) throws Exception {
-        
-        var ctx = contextExtractor.extract(request);
-        return topicService.listTopics(ctx.bootstrapServers(), ctx.securityProtocol(), 
-                ctx.username(), ctx.password(), ctx.saslMechanism());
     }
 
     @GetMapping("/{topicName}")
