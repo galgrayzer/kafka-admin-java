@@ -2,6 +2,7 @@ package com.kafka.admin.exception;
 
 import com.kafka.admin.model.response.ApiResponse;
 import org.apache.kafka.common.errors.*;
+import org.apache.kafka.common.errors.GroupNotEmptyException;
 import java.util.concurrent.ExecutionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,13 @@ public class KafkaAdminExceptionHandler {
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Invalid argument: " + ex.getMessage()));
+    }
+
+    @ExceptionHandler(GroupNotEmptyException.class)
+    public ResponseEntity<ApiResponse> handleGroupNotEmptyException(GroupNotEmptyException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("Cannot reset offsets: Consumer group has active consumers. " +
+                        "Please stop all consumers in the group before resetting offsets. Details: " + ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
