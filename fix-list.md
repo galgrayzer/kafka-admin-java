@@ -10,7 +10,7 @@
 9. [ ] Reset offset with live consumer instances reading from the requested topic should result with more indicative error message
 10. [ ] Error handler not returning all details (ex.getMessage() + ex.getCause().getMessage() should be returned)
 11. [ ] Reset offset by time should be used with Kafka admin client operation not self implementation logic
-12. [ ] Reset offset by time DTO contains NotBlank on a long param resulting with validation error
+12. [x] Reset offset by time DTO contains NotBlank on a long param resulting with validation error
 13. [ ] List all quotas route should be under /cluster endpoint
 14. [ ] Remove list all topics from topics endpoint
 15. [ ] Quota response should return the value in a string in bytes, without any `E`
@@ -20,8 +20,8 @@
 18. [x] **CRITICAL BUG** - `RequestContextExtractor` uses wrong header for bootstrapServers (uses `X-Kafka-Security-Protocol` instead of a bootstrap servers header)
 19. [x] Remove unused `FailoverRequest` DTO (dead code - not referenced by any controller or service)
 20. [x] Remove unused enums `AclOperationType` and `AclPermissionType` (services use Kafka's own classes directly)
-21. [ ] Add validation to `UpdateTopicConfigRequest` - `configs` map needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
-22. [ ] Add validation to `ProduceMessagesRequest` - `records` list needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
+21. [x] Add validation to `UpdateTopicConfigRequest` - `configs` map needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
+22. [x] Add validation to `ProduceMessagesRequest` - `records` list needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
 23. [ ] Fix `QuotaService.getUserQuota()` returning `null` instead of throwing 404 when no quota found
 24. [x] Fix `AclController.revokeProducerAcl` garbled `@Operation` annotation (summary and description are mangled together)
 25. [x] Fix `RequestContextExtractor` to check environment variables as documented in priority chain (HTTP Headers > Query Params > Env Vars > Properties)

@@ -1,15 +1,15 @@
 package com.kafka.admin.model.request;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class ResetConsumerOffsetsByTimeRequest {
 
-    @NotBlank(message = "Topic is required")
+    @NotNull(message = "Topic is required")
     private String topic;
 
     private Integer partition;
 
-    @NotBlank(message = "Timestamp is required")
+    @NotNull(message = "Timestamp is required")
     private Long timestamp;
 
     public String getTopic() {

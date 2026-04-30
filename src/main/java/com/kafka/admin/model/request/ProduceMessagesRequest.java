@@ -1,6 +1,8 @@
 package com.kafka.admin.model.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +13,8 @@ public class ProduceMessagesRequest {
 
     private Integer partition;
 
+    @NotNull(message = "Records list is required")
+    @NotEmpty(message = "Records list must not be empty")
     private List<ProducerRecord> records;
 
     public String getTopic() {
