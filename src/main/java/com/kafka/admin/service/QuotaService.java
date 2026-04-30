@@ -11,6 +11,7 @@ import org.apache.kafka.common.quota.ClientQuotaFilter;
 import org.apache.kafka.common.quota.ClientQuotaFilterComponent;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -54,7 +55,7 @@ public class QuotaService {
                         }
 
                         Map<String, String> configs = new HashMap<>();
-                        entry.getValue().forEach((key, value) -> configs.put(key, String.valueOf(value)));
+                        entry.getValue().forEach((key, value) -> configs.put(key, BigDecimal.valueOf(value).toPlainString()));
                         response.setConfigs(configs);
                         
                         return response;
@@ -154,7 +155,7 @@ public class QuotaService {
             response.setEntityName(username);
 
             Map<String, String> configs = new HashMap<>();
-            entry.getValue().forEach((key, value) -> configs.put(key, String.valueOf(value)));
+            entry.getValue().forEach((key, value) -> configs.put(key, BigDecimal.valueOf(value).toPlainString()));
             response.setConfigs(configs);
 
             return response;
