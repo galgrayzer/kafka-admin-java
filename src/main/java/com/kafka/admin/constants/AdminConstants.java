@@ -9,6 +9,7 @@ public final class AdminConstants {
     public static final String DEFAULT_SECURITY_PROTOCOL = "SASL_PLAINTEXT";
     public static final String DEFAULT_SASL_MECHANISM = "SCRAM-SHA-256";
 
+    public static final String HEADER_BOOTSTRAP_SERVERS = "X-Kafka-Bootstrap-Servers";
     public static final String HEADER_SECURITY_PROTOCOL = "X-Kafka-Security-Protocol";
     public static final String HEADER_USERNAME = "X-Kafka-Username";
     public static final String HEADER_PASSWORD = "X-Kafka-Password";
