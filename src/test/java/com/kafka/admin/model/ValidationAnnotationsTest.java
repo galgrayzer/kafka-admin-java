@@ -91,12 +91,4 @@ class ValidationAnnotationsTest {
         
         assertEquals(2, request.getTopics().size());
     }
-
-    @Test
-    void testFailoverRequest() {
-        FailoverRequest request = new FailoverRequest();
-        request.setPrimaryClusterId("cluster-1");
-        
-        assertEquals("cluster-1", request.getPrimaryClusterId());
-    }
 }

@@ -4,7 +4,6 @@ import com.kafka.admin.model.request.*;
 import com.kafka.admin.model.response.ApiResponse;
 import com.kafka.admin.model.response.ClusterLinkResponse;
 import com.kafka.admin.service.ClusterLinkService;
-import com.kafka.admin.service.ClusterLinkService.MirrorTopicInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/cluster-links")
@@ -42,10 +42,10 @@ public class ClusterLinkController {
 
     @GetMapping("/{linkName}/mirror-topics")
     @Operation(summary = "Describe mirror topics", description = "Get details of mirror topics on a cluster link")
-    public List<MirrorTopicInfo> describeMirrorTopics(
+    public Map<String, List<Map<String, String>>> describeMirrorTopics(
             @Parameter(description = "Link name") @PathVariable String linkName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
-            @RequestParam(required = true) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
+            @RequestParam(required = false) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);

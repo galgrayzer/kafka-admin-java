@@ -13,22 +13,6 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-public class MirrorTopicInfo {
-    private String topicName;
-    private String state;
-    private String sourceTopic;
-    private Long lag;
-
-    public String getTopicName() { return topicName; }
-    public void setTopicName(String topicName) { this.topicName = topicName; }
-    public String getState() { return state; }
-    public void setState(String state) { this.state = state; }
-    public String getSourceTopic() { return sourceTopic; }
-    public void setSourceTopic(String sourceTopic) { this.sourceTopic = sourceTopic; }
-    public Long getLag() { return lag; }
-    public void setLag(Long lag) { this.lag = lag; }
-}
-
 @Service
 public class ClusterLinkService {
 
@@ -74,7 +58,7 @@ public class ClusterLinkService {
         }
     }
 
-    public List<MirrorTopicInfo> describeMirrorTopics(
+    public Map<String, List<Map<String, String>>> describeMirrorTopics(
             String linkName,
             String bootstrapServers,
             @Nullable String securityProtocol,
@@ -83,24 +67,45 @@ public class ClusterLinkService {
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
         try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
-            
-            DescribeMirrorTopicsOptions options = new DescribeMirrorTopicsOptions();
-            if (linkName != null && !linkName.isEmpty()) {
-                options.linkNames(Collections.singletonList(linkName));
+
+            ListTopicsResult listResult = admin.listTopics();
+            Set<String> topicNames = listResult.names().get();
+
+            Map<String, List<Map<String, String>>> mirrorTopics = new LinkedHashMap<>();
+
+            if (!topicNames.isEmpty()) {
+                DescribeTopicsResult describeResult = admin.describeTopics(topicNames);
+                Map<String, TopicDescription> topicDescriptions = describeResult.allTopicNames().get();
+
+                for (TopicDescription topicDesc : topicDescriptions.values()) {
+                    if (linkName != null && !linkName.isEmpty() && !topicDesc.name().startsWith(linkName)) {
+                        continue;
+                    }
+
+                    try {
+                        ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicDesc.name());
+                        Config topicConfig = admin.describeConfigs(Collections.singletonList(resource)).all().get().get(resource);
+                        if (topicConfig != null) {
+                            String remoteClusterId = topicConfig.get("confluent.cluster.link").value();
+                            String mirrorState = topicConfig.get("confluent.topic.mirror.state").value();
+
+                            if (remoteClusterId != null) {
+                                Map<String, String> topicInfo = new LinkedHashMap<>();
+                                topicInfo.put("topicName", topicDesc.name());
+                                topicInfo.put("mirrorState", mirrorState != null ? mirrorState : "unknown");
+                                topicInfo.put("clusterLink", remoteClusterId);
+
+                                mirrorTopics.computeIfAbsent(linkName != null ? linkName : "all", k -> new ArrayList<>())
+                                        .add(topicInfo);
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Topic doesn't have mirror config, skip
+                    }
+                }
             }
-            
-            Collection<MirrorTopicDescription> descriptions = admin.describeMirrorTopics(options).result().get();
-            
-            return descriptions.stream()
-                    .map(d -> {
-                        MirrorTopicInfo info = new MirrorTopicInfo();
-                        info.setTopicName(d.mirrorTopicName());
-                        info.setSourceTopic(d.sourceTopicName());
-                        info.setState(d.mirrorState().name());
-                        info.setLag(d.replicationLag());
-                        return info;
-                    })
-                    .collect(Collectors.toList());
+
+            return mirrorTopics;
         }
     }
 
