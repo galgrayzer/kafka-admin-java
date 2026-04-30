@@ -19,7 +19,7 @@
         and true if it does and if the user is consumer or producer or both.
 18. [x] **CRITICAL BUG** - `RequestContextExtractor` uses wrong header for bootstrapServers (uses `X-Kafka-Security-Protocol` instead of a bootstrap servers header)
 19. [x] Remove unused `FailoverRequest` DTO (dead code - not referenced by any controller or service)
-20. [ ] Remove unused enums `AclOperationType` and `AclPermissionType` (services use Kafka's own classes directly)
+20. [x] Remove unused enums `AclOperationType` and `AclPermissionType` (services use Kafka's own classes directly)
 21. [ ] Add validation to `UpdateTopicConfigRequest` - `configs` map needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
 22. [ ] Add validation to `ProduceMessagesRequest` - `records` list needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
 23. [ ] Fix `QuotaService.getUserQuota()` returning `null` instead of throwing 404 when no quota found
