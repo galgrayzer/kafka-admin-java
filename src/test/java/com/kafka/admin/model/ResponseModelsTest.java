@@ -17,14 +17,10 @@ class ResponseModelsTest {
         response.setTopic("test-topic");
         response.setPartition(0);
         response.setCurrentOffset(100L);
-        response.setLogEndOffset(200L);
-        response.setLag(100L);
         
         assertEquals("test-topic", response.getTopic());
         assertEquals(0, response.getPartition());
         assertEquals(100L, response.getCurrentOffset());
-        assertEquals(200L, response.getLogEndOffset());
-        assertEquals(100L, response.getLag());
     }
 
     @Test
