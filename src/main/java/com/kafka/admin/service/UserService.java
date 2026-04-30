@@ -5,6 +5,13 @@ import com.kafka.admin.model.request.CreateUserRequest;
 import com.kafka.admin.model.response.UserResponse;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.acl.AccessControlEntryFilter;
+import org.apache.kafka.common.acl.AclBindingFilter;
+import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.acl.AclPermissionType;
+import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourceType;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -110,5 +117,64 @@ public class UserService {
             Map<String, UserScramCredentialsDescription> users = result.all().get();
             return users.containsKey(username);
         }
+    }
+
+    public Map<String, Object> checkAuthentication(
+            String username,
+            String password,
+            String topic,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String adminUsername,
+            @Nullable String adminPassword,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+
+        try (Admin admin = adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism)) {
+
+            admin.describeCluster().clusterId().get();
+
+            boolean isConsumer = checkAcl(admin, username, topic, AclOperation.READ);
+            boolean isProducer = checkAcl(admin, username, topic, AclOperation.WRITE);
+
+            String role;
+            if (isConsumer && isProducer) {
+                role = "both";
+            } else if (isConsumer) {
+                role = "consumer";
+            } else if (isProducer) {
+                role = "producer";
+            } else {
+                role = "none";
+            }
+
+            return Map.of(
+                    "authenticated", true,
+                    "username", username,
+                    "role", role,
+                    "isConsumer", isConsumer,
+                    "isProducer", isProducer
+            );
+        } catch (Exception e) {
+            return Map.of(
+                    "authenticated", false,
+                    "username", username,
+                    "role", "none",
+                    "isConsumer", false,
+                    "isProducer", false,
+                    "error", e.getMessage()
+            );
+        }
+    }
+
+    private boolean checkAcl(Admin admin, String username, String topic, AclOperation operation)
+            throws ExecutionException, InterruptedException {
+        String principal = "User:" + username;
+        AccessControlEntryFilter entryFilter = new AccessControlEntryFilter(
+                principal, "*", operation, AclPermissionType.ALLOW);
+        AclBindingFilter topicFilter = new AclBindingFilter(
+                new ResourcePattern(ResourceType.TOPIC, topic, PatternType.LITERAL).toFilter(),
+                entryFilter);
+        return !admin.describeAcls(topicFilter).values().get().isEmpty();
     }
 }

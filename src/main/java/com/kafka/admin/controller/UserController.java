@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -84,5 +85,22 @@ public class UserController {
         } else {
             return ApiResponse.success("User does not exist", false);
         }
+    }
+
+    @PostMapping("/authenticate")
+    @Operation(summary = "Check authentication", description = "Verify if a user can authenticate and determine their role (consumer/producer/both)")
+    public ApiResponse checkAuthentication(
+            @Parameter(description = "Username to check") @RequestParam String username,
+            @Parameter(description = "Password to verify") @RequestParam String password,
+            @Parameter(description = "Topic name to check permissions for") @RequestParam String topic,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
+            @RequestParam(required = false) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+
+        var ctx = contextExtractor.extract(request);
+        var result = userService.checkAuthentication(username, password, topic,
+                ctx.bootstrapServers(), ctx.securityProtocol(),
+                ctx.username(), ctx.password(), ctx.saslMechanism());
+        return ApiResponse.success("Authentication check completed", result);
     }
 }

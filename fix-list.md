@@ -15,7 +15,7 @@
 14. [x] Remove list all topics from topics endpoint
 15. [x] Quota response should return the value in a string in bytes, without any `E`
 16. [x] OpenAPI config should be without pre given servers
-17. [ ] Need to add authenticate check route that check if a user can authenticate to the cluster with a given username and password and result with false if not 
+17. [x] Need to add authenticate check route that check if a user can authenticate to the cluster with a given username and password and result with false if not 
         and true if it does and if the user is consumer or producer or both.
 18. [x] **CRITICAL BUG** - `RequestContextExtractor` uses wrong header for bootstrapServers (uses `X-Kafka-Security-Protocol` instead of a bootstrap servers header)
 19. [x] Remove unused `FailoverRequest` DTO (dead code - not referenced by any controller or service)
