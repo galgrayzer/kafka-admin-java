@@ -3,11 +3,14 @@ package com.kafka.admin.service;
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.model.request.CreateTopicRequest;
 import com.kafka.admin.model.request.UpdateTopicConfigRequest;
+import com.kafka.admin.model.response.TopicPartitionOffsetResponse;
 import com.kafka.admin.model.response.TopicResponse;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartitionInfo;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -172,5 +175,46 @@ public class TopicService {
         
         response.setPartitionsReplicas(partitionReplicas);
         return response;
+    }
+
+    public List<TopicPartitionOffsetResponse> getTopicPartitionOffsets(
+            String topicName,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String username,
+            @Nullable String password,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+
+        try (Admin admin = adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism)) {
+
+            DescribeTopicsResult topicResult = admin.describeTopics(Collections.singletonList(topicName));
+            TopicDescription topicDesc = topicResult.allTopicNames().get().get(topicName);
+
+            Map<TopicPartition, OffsetSpec> beginningOffsets = new HashMap<>();
+            Map<TopicPartition, OffsetSpec> endOffsets = new HashMap<>();
+
+            for (TopicPartitionInfo tpInfo : topicDesc.partitions()) {
+                TopicPartition tp = new TopicPartition(topicName, tpInfo.partition());
+                beginningOffsets.put(tp, OffsetSpec.earliest());
+                endOffsets.put(tp, OffsetSpec.latest());
+            }
+
+            ListOffsetsResult beginningResult = admin.listOffsets(beginningOffsets);
+            ListOffsetsResult endResult = admin.listOffsets(endOffsets);
+
+            List<TopicPartitionOffsetResponse> responses = new ArrayList<>();
+            for (TopicPartitionInfo tpInfo : topicDesc.partitions()) {
+                TopicPartition tp = new TopicPartition(topicName, tpInfo.partition());
+                TopicPartitionOffsetResponse response = new TopicPartitionOffsetResponse();
+                response.setTopic(topicName);
+                response.setPartitionId(tpInfo.partition());
+                response.setBeginningOffset(beginningResult.partitionResult(tp).get().offset());
+                response.setEndOffset(endResult.partitionResult(tp).get().offset());
+                responses.add(response);
+            }
+
+            return responses;
+        }
     }
 }

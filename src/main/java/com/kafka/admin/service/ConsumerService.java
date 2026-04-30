@@ -2,8 +2,10 @@ package com.kafka.admin.service;
 
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.model.request.CopyConsumerOffsetsRequest;
+import com.kafka.admin.model.request.PartitionOffsetRequest;
 import com.kafka.admin.model.request.ResetConsumerOffsetsByTimeRequest;
 import com.kafka.admin.model.request.ResetConsumerOffsetsRequest;
+import com.kafka.admin.model.request.UpdateTopicPartitionOffsetsRequest;
 import com.kafka.admin.model.response.ConsumerOffsetResponse;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
@@ -167,6 +169,30 @@ public class ConsumerService {
             }
 
             AlterConsumerGroupOffsetsResult result = admin.alterConsumerGroupOffsets(groupId, targetOffsets);
+            result.all().get();
+        }
+    }
+
+    public void updateTopicPartitionOffsets(
+            String topicName,
+            UpdateTopicPartitionOffsetsRequest request,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String username,
+            @Nullable String password,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+
+        try (Admin admin = adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism)) {
+
+            Map<TopicPartition, OffsetAndMetadata> offsetMap = new HashMap<>();
+            for (PartitionOffsetRequest partitionOffset : request.getPartitionOffsets()) {
+                TopicPartition tp = new TopicPartition(topicName, partitionOffset.getPartitionId());
+                offsetMap.put(tp, new OffsetAndMetadata(partitionOffset.getOffset()));
+            }
+
+            AlterConsumerGroupOffsetsResult result = admin.alterConsumerGroupOffsets(
+                    request.getGroupId(), offsetMap);
             result.all().get();
         }
     }

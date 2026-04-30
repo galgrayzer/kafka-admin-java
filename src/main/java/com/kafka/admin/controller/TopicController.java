@@ -3,6 +3,7 @@ package com.kafka.admin.controller;
 import com.kafka.admin.model.request.CreateTopicRequest;
 import com.kafka.admin.model.request.UpdateTopicConfigRequest;
 import com.kafka.admin.model.response.ApiResponse;
+import com.kafka.admin.model.response.TopicPartitionOffsetResponse;
 import com.kafka.admin.model.response.TopicResponse;
 import com.kafka.admin.service.TopicService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/topics")
@@ -81,5 +84,18 @@ public class TopicController {
         topicService.updateTopicConfig(topicName, updateRequest, ctx.bootstrapServers(), ctx.securityProtocol(), 
                 ctx.username(), ctx.password(), ctx.saslMechanism());
         return ApiResponse.success("Topic configuration updated successfully", topicName);
+    }
+
+    @GetMapping("/{topicName}/offsets")
+    @Operation(summary = "Get topic partition offsets", description = "Get beginning and end offsets for all partitions of a topic")
+    public List<TopicPartitionOffsetResponse> getTopicPartitionOffsets(
+            @Parameter(description = "Topic name") @PathVariable String topicName,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+
+        var ctx = contextExtractor.extract(request);
+        return topicService.getTopicPartitionOffsets(topicName, ctx.bootstrapServers(), ctx.securityProtocol(),
+                ctx.username(), ctx.password(), ctx.saslMechanism());
     }
 }
