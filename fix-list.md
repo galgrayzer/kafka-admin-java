@@ -28,5 +28,5 @@
 26. [x] Consolidate duplicate default value logic between `RequestContextExtractor` `@Value` annotations and `KafkaAdminConfig`
 27. [ ] DRY up `KafkaAdminClientFactory` - `createAdminClient()` and `createProperties()` contain nearly identical security property building code
 28. [ ] Handle unsupported security protocols in `KafkaAdminClientFactory` (currently silently ignores and uses Kafka defaults)
-29. [ ] Fix `QuotaService.listQuotas` silently ignoring `client-id` entity quotas when both user and client-id entities exist
+29. [x] Fix `QuotaService.listQuotas` silently ignoring `client-id` entity quotas when both user and client-id entities exist
 30. [x] Remove unused `serverPort` field from `OpenApiConfig` (dead code - read via `@Value` but never used)

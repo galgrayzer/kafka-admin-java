@@ -39,29 +39,46 @@ public class QuotaService {
             Map<ClientQuotaEntity, Map<String, Double>> quotas = result.entities().get();
 
             return quotas.entrySet().stream()
-                    .map(entry -> {
-                        QuotaResponse response = new QuotaResponse();
+                    .flatMap(entry -> {
                         Map<String, String> entityMap = entry.getKey().entries();
                         
-                        if (entityMap.containsKey("user")) {
-                            response.setEntityType("user");
-                            response.setEntityName(entityMap.get("user"));
-                        } else if (entityMap.containsKey("client-id")) {
-                            response.setEntityType("client-id");
-                            response.setEntityName(entityMap.get("client-id"));
-                        } else {
-                            response.setEntityType("default");
-                            response.setEntityName("");
-                        }
-
-                        Map<String, String> configs = new HashMap<>();
-                        entry.getValue().forEach((key, value) -> configs.put(key, BigDecimal.valueOf(value).toPlainString()));
-                        response.setConfigs(configs);
+                        List<QuotaResponse> responses = new ArrayList<>();
                         
-                        return response;
+                        String entityType;
+                        String entityName;
+                        
+                        if (entityMap.containsKey("user") && entityMap.containsKey("client-id")) {
+                            responses.add(createQuotaResponse("user", entityMap.get("user"), entry.getValue()));
+                            responses.add(createQuotaResponse("client-id", entityMap.get("client-id"), entry.getValue()));
+                            return responses.stream();
+                        } else if (entityMap.containsKey("user")) {
+                            entityType = "user";
+                            entityName = entityMap.get("user");
+                        } else if (entityMap.containsKey("client-id")) {
+                            entityType = "client-id";
+                            entityName = entityMap.get("client-id");
+                        } else {
+                            entityType = "default";
+                            entityName = "";
+                        }
+                        
+                        responses.add(createQuotaResponse(entityType, entityName, entry.getValue()));
+                        return responses.stream();
                     })
                     .collect(Collectors.toList());
         }
+    }
+
+    private QuotaResponse createQuotaResponse(String entityType, String entityName, Map<String, Double> values) {
+        QuotaResponse response = new QuotaResponse();
+        response.setEntityType(entityType);
+        response.setEntityName(entityName);
+
+        Map<String, String> configs = new HashMap<>();
+        values.forEach((key, value) -> configs.put(key, BigDecimal.valueOf(value).toPlainString()));
+        response.setConfigs(configs);
+        
+        return response;
     }
 
     public void createOrAlterQuota(
