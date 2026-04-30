@@ -144,10 +144,6 @@ public class AclService {
 
                 aclBindings.add(new AclBinding(
                         groupPattern,
-                        new AccessControlEntry(principal, "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
-
-                aclBindings.add(new AclBinding(
-                        groupPattern,
                         new AccessControlEntry(principal, "*", AclOperation.READ, AclPermissionType.ALLOW)));
             }
 
@@ -263,10 +259,6 @@ public class AclService {
                         ResourceType.GROUP,
                         request.getGroup(),
                         PatternType.LITERAL);
-
-                filters.add(new AclBindingFilter(
-                        groupPattern.toFilter(),
-                        new AccessControlEntryFilter(principal, "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
 
                 filters.add(new AclBindingFilter(
                         groupPattern.toFilter(),

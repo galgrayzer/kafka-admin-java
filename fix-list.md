@@ -5,7 +5,7 @@
 4. [ ] Bootstrap.servers should be a required param on all routes
 5. [ ] Default SASL mechanism not used
 6. [ ] User deletion doesnt work because SASL mechanism is null
-7. [ ] Remove describe permissions from Consumer Group ACL on grant consumer
+7. [x] Remove describe permissions from Consumer Group ACL on grant consumer
 8. [ ] Add Cluster Linking describe mirror route
 9. [ ] Reset offset with live consumer instances reading from the requested topic should result with more indicative error message
 10. [ ] Error handler not returning all details (ex.getMessage() + ex.getCause().getMessage() should be returned)
