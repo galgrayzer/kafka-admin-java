@@ -27,18 +27,6 @@ public class QuotaController {
         this.contextExtractor = contextExtractor;
     }
 
-    @GetMapping
-    @Operation(summary = "List all quotas", description = "Get a list of all quotas in the Kafka cluster")
-    public List<QuotaResponse> listQuotas(
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
-            HttpServletRequest request) throws Exception {
-        
-        var ctx = contextExtractor.extract(request);
-        return quotaService.listQuotas(ctx.bootstrapServers(), ctx.securityProtocol(), 
-                ctx.username(), ctx.password(), ctx.saslMechanism());
-    }
-
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create or alter a quota", description = "Create or alter a quota for user/client")
