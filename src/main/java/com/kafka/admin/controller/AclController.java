@@ -153,7 +153,7 @@ public class AclController {
     }
 
     @DeleteMapping("/user/{username}/producer")
-    @Operation(summary = "Revoke producer ACLRevoke producer privileges", description = " (WRITE, DESCRIBE on topic, WRITE on transaction ID)")
+    @Operation(summary = "Revoke producer ACL", description = "Revoke producer privileges (WRITE, DESCRIBE on topic, WRITE on transaction ID)")
     public ApiResponse revokeProducerAcl(
             @Parameter(description = "Username") @PathVariable String username,
             @Valid @RequestBody GrantProducerAclRequest aclRequest,

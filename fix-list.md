@@ -23,7 +23,7 @@
 21. [ ] Add validation to `UpdateTopicConfigRequest` - `configs` map needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
 22. [ ] Add validation to `ProduceMessagesRequest` - `records` list needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
 23. [ ] Fix `QuotaService.getUserQuota()` returning `null` instead of throwing 404 when no quota found
-24. [ ] Fix `AclController.revokeProducerAcl` garbled `@Operation` annotation (summary and description are mangled together)
+24. [x] Fix `AclController.revokeProducerAcl` garbled `@Operation` annotation (summary and description are mangled together)
 25. [x] Fix `RequestContextExtractor` to check environment variables as documented in priority chain (HTTP Headers > Query Params > Env Vars > Properties)
 26. [x] Consolidate duplicate default value logic between `RequestContextExtractor` `@Value` annotations and `KafkaAdminConfig`
 27. [ ] DRY up `KafkaAdminClientFactory` - `createAdminClient()` and `createProperties()` contain nearly identical security property building code
