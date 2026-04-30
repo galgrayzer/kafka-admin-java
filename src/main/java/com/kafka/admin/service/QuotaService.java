@@ -145,7 +145,7 @@ public class QuotaService {
             Map<ClientQuotaEntity, Map<String, Double>> quotas = result.entities().get();
 
             if (quotas.isEmpty()) {
-                return null;
+                throw new IllegalArgumentException("No quota found for user: " + username);
             }
 
             Map.Entry<ClientQuotaEntity, Map<String, Double>> entry = quotas.entrySet().iterator().next();

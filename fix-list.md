@@ -22,7 +22,7 @@
 20. [x] Remove unused enums `AclOperationType` and `AclPermissionType` (services use Kafka's own classes directly)
 21. [x] Add validation to `UpdateTopicConfigRequest` - `configs` map needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
 22. [x] Add validation to `ProduceMessagesRequest` - `records` list needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
-23. [ ] Fix `QuotaService.getUserQuota()` returning `null` instead of throwing 404 when no quota found
+23. [x] Fix `QuotaService.getUserQuota()` returning `null` instead of throwing 404 when no quota found
 24. [x] Fix `AclController.revokeProducerAcl` garbled `@Operation` annotation (summary and description are mangled together)
 25. [x] Fix `RequestContextExtractor` to check environment variables as documented in priority chain (HTTP Headers > Query Params > Env Vars > Properties)
 26. [x] Consolidate duplicate default value logic between `RequestContextExtractor` `@Value` annotations and `KafkaAdminConfig`
