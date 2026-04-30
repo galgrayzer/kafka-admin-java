@@ -18,7 +18,7 @@
 17. [ ] Need to add authenticate check route that check if a user can authenticate to the cluster with a given username and password and result with false if not 
         and true if it does and if the user is consumer or producer or both.
 18. [x] **CRITICAL BUG** - `RequestContextExtractor` uses wrong header for bootstrapServers (uses `X-Kafka-Security-Protocol` instead of a bootstrap servers header)
-19. [ ] Remove unused `FailoverRequest` DTO (dead code - not referenced by any controller or service)
+19. [x] Remove unused `FailoverRequest` DTO (dead code - not referenced by any controller or service)
 20. [ ] Remove unused enums `AclOperationType` and `AclPermissionType` (services use Kafka's own classes directly)
 21. [ ] Add validation to `UpdateTopicConfigRequest` - `configs` map needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
 22. [ ] Add validation to `ProduceMessagesRequest` - `records` list needs `@NotNull` and `@NotEmpty` to prevent NullPointerException
