@@ -4,7 +4,7 @@
 
 - Java 17 or higher
 - Maven 3.8+
-- Running Kafka cluster (3.0+ for full feature support)
+- Running Kafka cluster (Confluent 8.2.0-ce for full feature support)
 
 ## Setup
 
