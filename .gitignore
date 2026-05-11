@@ -1,6 +1,9 @@
 # Kiro
 .kiro/
 
+# opencode
+.opencode/
+
 # Maven
 target/
 pom.xml.tag

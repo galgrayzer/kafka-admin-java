@@ -44,8 +44,8 @@ public class ClusterLinkController {
     @Operation(summary = "Describe mirror topics", description = "Get details of mirror topics on a cluster link")
     public Map<String, List<Map<String, String>>> describeMirrorTopics(
             @Parameter(description = "Link name") @PathVariable String linkName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);

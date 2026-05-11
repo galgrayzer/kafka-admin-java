@@ -11,6 +11,7 @@ import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -184,8 +185,51 @@ class UserServiceTest {
         verify(admin).close();
     }
 
-    // Note: deleteUser tests omitted due to pre-existing bug in UserService.deleteUser
-    // which passes null for ScramMechanism, causing NPE in UserScramCredentialDeletion constructor
+    @Test
+    void testDeleteUserSuccess() throws Exception {
+        // Given
+        String username = "test-user-1";
+        Map<String, UserScramCredentialsDescription> users = createMockUserCredentials();
+
+        when(admin.describeUserScramCredentials(anyList())).thenReturn(describeUserScramCredentialsResult);
+        when(describeUserScramCredentialsResult.all()).thenReturn(describeUserScramFuture);
+        when(describeUserScramFuture.get()).thenReturn(users);
+
+        when(admin.alterUserScramCredentials(anyList())).thenReturn(alterUserScramCredentialsResult);
+        when(alterUserScramCredentialsResult.all()).thenReturn(alterUserScramFuture);
+        when(alterUserScramFuture.get()).thenReturn(null);
+
+        // When
+        userService.deleteUser(username, "localhost:9092", null, null, null, null);
+
+        // Then
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<UserScramCredentialAlteration>> captor = ArgumentCaptor.forClass((Class) List.class);
+        verify(admin).alterUserScramCredentials(captor.capture());
+        List<UserScramCredentialAlteration> deletions = captor.getValue();
+        assertEquals(1, deletions.size());
+        UserScramCredentialDeletion deletion = (UserScramCredentialDeletion) deletions.get(0);
+        assertEquals(username, deletion.user());
+        assertEquals(ScramMechanism.SCRAM_SHA_512, deletion.mechanism());
+        verify(admin).close();
+    }
+
+    @Test
+    void testDeleteUserUserNotFound() throws Exception {
+        // Given
+        String username = "non-existent-user";
+        Map<String, UserScramCredentialsDescription> emptyUsers = Collections.emptyMap();
+
+        when(admin.describeUserScramCredentials(anyList())).thenReturn(describeUserScramCredentialsResult);
+        when(describeUserScramCredentialsResult.all()).thenReturn(describeUserScramFuture);
+        when(describeUserScramFuture.get()).thenReturn(emptyUsers);
+
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () ->
+            userService.deleteUser(username, "localhost:9092", null, null, null, null)
+        );
+        verify(admin).close();
+    }
 
     @Test
     void testUserExistsSuccess() throws Exception {

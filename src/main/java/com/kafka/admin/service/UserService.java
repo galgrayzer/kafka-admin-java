@@ -97,7 +97,15 @@ public class UserService {
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
 
-            UserScramCredentialDeletion deletion = new UserScramCredentialDeletion(username, null);
+            DescribeUserScramCredentialsResult credResult = admin.describeUserScramCredentials(List.of(username));
+            Map<String, UserScramCredentialsDescription> creds = credResult.all().get();
+            UserScramCredentialsDescription userCreds = creds.get(username);
+            if (userCreds == null || userCreds.credentialInfos().isEmpty()) {
+                throw new IllegalArgumentException("No SCRAM credentials found for user: " + username);
+            }
+            ScramMechanism mechanism = userCreds.credentialInfos().get(0).mechanism();
+
+            UserScramCredentialDeletion deletion = new UserScramCredentialDeletion(username, mechanism);
             admin.alterUserScramCredentials(List.of(deletion)).all().get();
         }
     }
