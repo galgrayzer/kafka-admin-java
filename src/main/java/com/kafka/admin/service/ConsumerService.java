@@ -137,6 +137,7 @@ public class ConsumerService {
             for (TopicPartition tp : partitionsToReset) {
                 ListOffsetsResult result = admin.listOffsets(Map.of(tp, OffsetSpec.forTimestamp(request.getTimestamp())));
                 long offset = result.partitionResult(tp).get().offset();
+                if (offset < 0) offset = 0L;
                 offsetMap.put(tp, new OffsetAndMetadata(offset));
             }
 
