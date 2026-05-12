@@ -29,4 +29,7 @@ public final class AdminConstants {
     public static final String CLUSTER_LINKS_PATH = "/cluster-links";
 
     public static final String PARAM_BOOTSTRAP_SERVERS = "bootstrapServers";
+
+    public static final int DEFAULT_ADMIN_CLIENT_TIMEOUT_MS = 15000;
+    public static final int REQUEST_TIMEOUT_MS = 10000;
 }

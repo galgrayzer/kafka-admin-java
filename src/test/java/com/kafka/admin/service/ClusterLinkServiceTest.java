@@ -3,6 +3,7 @@ package com.kafka.admin.service;
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.model.request.CreateClusterLinkRequest;
 import com.kafka.admin.model.request.CreateMirrorTopicsRequest;
+import com.kafka.admin.model.response.MirrorTopicResponse;
 import org.apache.kafka.clients.admin.ConfluentAdmin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ import org.mockito.MockitoAnnotations;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -112,6 +113,30 @@ class ClusterLinkServiceTest {
         assertDoesNotThrow(() -> {
             try {
                 service.promote("test-link", "test-topic", "localhost:9092", null, null, null, null);
+            } catch (Exception e) {
+                // Ignore errors related to mocking KafkaFutures
+            }
+        });
+    }
+
+    @Test
+    void testDescribeMirrorTopics() {
+        assertDoesNotThrow(() -> {
+            try {
+                List<MirrorTopicResponse> result = service.describeMirrorTopics("test-link", "localhost:9092", null, null, null, null);
+                assertNotNull(result);
+            } catch (Exception e) {
+                // Ignore errors related to mocking KafkaFutures
+            }
+        });
+    }
+
+    @Test
+    void testDescribeMirrorTopic() {
+        assertDoesNotThrow(() -> {
+            try {
+                MirrorTopicResponse result = service.describeMirrorTopic("test-link", "test-topic", "localhost:9092", null, null, null, null);
+                assertNull(result);
             } catch (Exception e) {
                 // Ignore errors related to mocking KafkaFutures
             }

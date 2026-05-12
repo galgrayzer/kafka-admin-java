@@ -3,6 +3,7 @@ package com.kafka.admin.controller;
 import com.kafka.admin.model.request.*;
 import com.kafka.admin.model.response.ApiResponse;
 import com.kafka.admin.model.response.ClusterLinkResponse;
+import com.kafka.admin.model.response.MirrorTopicResponse;
 import com.kafka.admin.service.ClusterLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/cluster-links")
@@ -41,8 +41,8 @@ public class ClusterLinkController {
     }
 
     @GetMapping("/{linkName}/mirror-topics")
-    @Operation(summary = "Describe mirror topics", description = "Get details of mirror topics on a cluster link")
-    public Map<String, List<Map<String, String>>> describeMirrorTopics(
+    @Operation(summary = "Describe all mirror topics", description = "Get details of all mirror topics on a cluster link")
+    public List<MirrorTopicResponse> describeMirrorTopics(
             @Parameter(description = "Link name") @PathVariable String linkName,
             @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
             @RequestParam(required = true) String bootstrapServers,
@@ -50,6 +50,20 @@ public class ClusterLinkController {
         
         var ctx = contextExtractor.extract(request);
         return clusterLinkService.describeMirrorTopics(linkName, ctx.bootstrapServers(), ctx.securityProtocol(), 
+                ctx.username(), ctx.password(), ctx.saslMechanism());
+    }
+
+    @GetMapping("/{linkName}/mirror-topics/{topicName}")
+    @Operation(summary = "Describe a mirror topic", description = "Get details of a specific mirror topic on a cluster link")
+    public MirrorTopicResponse describeMirrorTopic(
+            @Parameter(description = "Link name") @PathVariable String linkName,
+            @Parameter(description = "Topic name") @PathVariable String topicName,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+        
+        var ctx = contextExtractor.extract(request);
+        return clusterLinkService.describeMirrorTopic(linkName, topicName, ctx.bootstrapServers(), ctx.securityProtocol(),
                 ctx.username(), ctx.password(), ctx.saslMechanism());
     }
 

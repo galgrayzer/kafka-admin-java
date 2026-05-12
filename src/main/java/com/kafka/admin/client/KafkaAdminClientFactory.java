@@ -64,6 +64,9 @@ public class KafkaAdminClientFactory {
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, finalBootstrapServers);
         props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, protocol.name());
 
+        props.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, config.getDefaultRequestTimeoutMs());
+        props.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, config.getDefaultAdminClientTimeoutMs());
+
         if (isSasl(protocol)) {
             String user = defaultIfNull(username, config.getDefaultUsername());
             String pass = defaultIfNull(password, config.getDefaultPassword());
@@ -72,7 +75,7 @@ public class KafkaAdminClientFactory {
             if (user != null && pass != null) {
                 props.put(SaslConfigs.SASL_MECHANISM, mechanism);
                 props.put(SaslConfigs.SASL_JAAS_CONFIG, buildJaasConfig(user, pass));
-            }c
+            }
         }
 
         return props;

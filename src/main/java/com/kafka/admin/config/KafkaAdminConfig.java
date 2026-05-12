@@ -17,6 +17,8 @@ public class KafkaAdminConfig {
     private String defaultUsername;
     private String defaultPassword;
     private String defaultSaslMechanism = AdminConstants.DEFAULT_SASL_MECHANISM;
+    private int defaultAdminClientTimeoutMs = AdminConstants.DEFAULT_ADMIN_CLIENT_TIMEOUT_MS;
+    private int defaultRequestTimeoutMs = AdminConstants.REQUEST_TIMEOUT_MS;
 
     public String getDefaultBootstrapServers() {
         return defaultBootstrapServers;
@@ -56,5 +58,21 @@ public class KafkaAdminConfig {
 
     public void setDefaultSaslMechanism(String defaultSaslMechanism) {
         this.defaultSaslMechanism = defaultSaslMechanism;
+    }
+
+    public int getDefaultAdminClientTimeoutMs() {
+        return defaultAdminClientTimeoutMs;
+    }
+
+    public void setDefaultAdminClientTimeoutMs(int defaultAdminClientTimeoutMs) {
+        this.defaultAdminClientTimeoutMs = defaultAdminClientTimeoutMs;
+    }
+
+    public int getDefaultRequestTimeoutMs() {
+        return defaultRequestTimeoutMs;
+    }
+
+    public void setDefaultRequestTimeoutMs(int defaultRequestTimeoutMs) {
+        this.defaultRequestTimeoutMs = defaultRequestTimeoutMs;
     }
 }

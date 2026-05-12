@@ -4,8 +4,6 @@
 
 This is a Spring Boot 3.2.0 REST API for managing Kafka clusters using the Apache Kafka Admin Client. The project uses Java 17, Maven, and follows standard Spring Boot conventions.
 
-> **IMPORTANT**: Before working, check `.opencode/` folder for pending fixes and planning docs.
-
 ## Build Commands
 
 ```bash

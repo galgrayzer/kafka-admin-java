@@ -3,6 +3,7 @@ package com.kafka.admin.service;
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.model.request.*;
 import com.kafka.admin.model.response.ClusterLinkResponse;
+import com.kafka.admin.model.response.MirrorTopicResponse;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.config.ConfigResource;
@@ -58,7 +59,7 @@ public class ClusterLinkService {
         }
     }
 
-    public Map<String, List<Map<String, String>>> describeMirrorTopics(
+    public List<MirrorTopicResponse> describeMirrorTopics(
             String linkName,
             String bootstrapServers,
             @Nullable String securityProtocol,
@@ -68,45 +69,63 @@ public class ClusterLinkService {
         try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
 
-            ListTopicsResult listResult = admin.listTopics();
-            Set<String> topicNames = listResult.names().get();
+            Set<String> allTopics = admin.listTopics().names().get();
+            if (allTopics.isEmpty()) return List.of();
 
-            Map<String, List<Map<String, String>>> mirrorTopics = new LinkedHashMap<>();
+            DescribeMirrorsOptions options = new DescribeMirrorsOptions()
+                    .linkNames(Collections.singletonList(linkName));
+            DescribeMirrorsResult result = admin.describeMirrors(allTopics, options);
 
-            if (!topicNames.isEmpty()) {
-                DescribeTopicsResult describeResult = admin.describeTopics(topicNames);
-                Map<String, TopicDescription> topicDescriptions = describeResult.allTopicNames().get();
-
-                for (TopicDescription topicDesc : topicDescriptions.values()) {
-                    if (linkName != null && !linkName.isEmpty() && !topicDesc.name().startsWith(linkName)) {
-                        continue;
-                    }
-
+            try {
+                Map<String, MirrorTopicDescription> descriptions = result.all().get();
+                return descriptions.values().stream()
+                        .map(this::toMirrorTopicResponse)
+                        .collect(Collectors.toList());
+            } catch (ExecutionException e) {
+                List<MirrorTopicResponse> responses = new ArrayList<>();
+                for (String topic : allTopics) {
                     try {
-                        ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicDesc.name());
-                        Config topicConfig = admin.describeConfigs(Collections.singletonList(resource)).all().get().get(resource);
-                        if (topicConfig != null) {
-                            String remoteClusterId = topicConfig.get("confluent.cluster.link").value();
-                            String mirrorState = topicConfig.get("confluent.topic.mirror.state").value();
-
-                            if (remoteClusterId != null) {
-                                Map<String, String> topicInfo = new LinkedHashMap<>();
-                                topicInfo.put("topicName", topicDesc.name());
-                                topicInfo.put("mirrorState", mirrorState != null ? mirrorState : "unknown");
-                                topicInfo.put("clusterLink", remoteClusterId);
-
-                                mirrorTopics.computeIfAbsent(linkName != null ? linkName : "all", k -> new ArrayList<>())
-                                        .add(topicInfo);
-                            }
+                        MirrorTopicDescription desc = result.result().get(topic).get();
+                        if (desc.linkName().equals(linkName)) {
+                            responses.add(toMirrorTopicResponse(desc));
                         }
-                    } catch (Exception e) {
-                        // Topic doesn't have mirror config, skip
+                    } catch (Exception ignored) {
+                        // Not a mirror topic, skip
                     }
                 }
+                return responses;
             }
-
-            return mirrorTopics;
         }
+    }
+
+    public MirrorTopicResponse describeMirrorTopic(
+            String linkName,
+            String topicName,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String username,
+            @Nullable String password,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
+
+            DescribeMirrorsOptions options = new DescribeMirrorsOptions()
+                    .linkNames(Collections.singletonList(linkName));
+            DescribeMirrorsResult result = admin.describeMirrors(
+                    Collections.singletonList(topicName), options);
+            MirrorTopicDescription desc = result.result().get(topicName).get();
+            return toMirrorTopicResponse(desc);
+        }
+    }
+
+    private MirrorTopicResponse toMirrorTopicResponse(MirrorTopicDescription desc) {
+        MirrorTopicResponse response = new MirrorTopicResponse();
+        response.setTopicName(desc.mirrorTopic());
+        response.setLinkName(desc.linkName());
+        response.setMirrorState(desc.state().name());
+        response.setSourceTopicId(desc.sourceTopicId().toString());
+        response.setNumPartitions(desc.numPartitions());
+        return response;
     }
 
     public void createClusterLink(

@@ -11,6 +11,8 @@ kafka-admin:
   default-sasl-mechanism: SCRAM-SHA-256
   default-username: admin
   default-password: admin-secret
+  default-admin-client-timeout-ms: 15000
+  default-request-timeout-ms: 10000
 
 springdoc:
   api-docs:
