@@ -72,10 +72,11 @@ public class KafkaAdminClientFactory {
             String pass = defaultIfNull(password, config.getDefaultPassword());
             String mechanism = defaultIfNull(saslMechanism, config.getDefaultSaslMechanism());
 
-            if (user != null && pass != null) {
-                props.put(SaslConfigs.SASL_MECHANISM, mechanism);
-                props.put(SaslConfigs.SASL_JAAS_CONFIG, buildJaasConfig(user, pass));
+            if (user == null || pass == null) {
+                throw new IllegalArgumentException("SASL authentication requires both username and password.");
             }
+            props.put(SaslConfigs.SASL_MECHANISM, mechanism);
+            props.put(SaslConfigs.SASL_JAAS_CONFIG, buildJaasConfig(user, pass));
         }
 
         return props;
