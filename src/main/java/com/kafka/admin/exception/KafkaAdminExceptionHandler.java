@@ -2,8 +2,9 @@ package com.kafka.admin.exception;
 
 import com.kafka.admin.model.response.ApiResponse;
 import org.apache.kafka.common.errors.*;
-import org.apache.kafka.common.errors.GroupNotEmptyException;
 import java.util.concurrent.ExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class KafkaAdminExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(KafkaAdminExceptionHandler.class);
 
     @ExceptionHandler(TopicExistsException.class)
     public ResponseEntity<ApiResponse> handleTopicExistsException(TopicExistsException ex) {
@@ -62,6 +65,7 @@ public class KafkaAdminExceptionHandler {
 
     @ExceptionHandler(ExecutionException.class)
     public ResponseEntity<ApiResponse> handleExecutionException(ExecutionException ex) {
+        log.error("Kafka operation failed", ex);
         String message = "Operation failed: " + ex.getMessage();
         if (ex.getCause() != null && ex.getCause().getMessage() != null) {
             message += " - " + ex.getCause().getMessage();
@@ -72,6 +76,7 @@ public class KafkaAdminExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGenericException(Exception ex) {
+        log.error("Unexpected error", ex);
         String message = "Unexpected error: " + ex.getMessage();
         if (ex.getCause() != null && ex.getCause().getMessage() != null) {
             message += " - " + ex.getCause().getMessage();
