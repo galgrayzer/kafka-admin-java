@@ -59,8 +59,7 @@ public class KafkaAdminClientFactory {
             throw new IllegalArgumentException("bootstrapServers is required");
         }
 
-        String finalSecurityProtocol = defaultIfNull(securityProtocol, config.getDefaultSecurityProtocol());
-        SecurityProtocol protocol = SecurityProtocol.forName(finalSecurityProtocol);
+        SecurityProtocol protocol = SecurityProtocol.forName(securityProtocol);
 
         Map<String, Object> props = new HashMap<>();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -83,10 +82,6 @@ public class KafkaAdminClientFactory {
     private boolean isSasl(SecurityProtocol protocol) {
         return protocol == SecurityProtocol.SASL_SSL ||
                protocol == SecurityProtocol.SASL_PLAINTEXT;
-    }
-
-    private String defaultIfNull(String value, String defaultValue) {
-        return value != null ? value : defaultValue;
     }
 
     private String buildJaasConfig(String username, String password) {
