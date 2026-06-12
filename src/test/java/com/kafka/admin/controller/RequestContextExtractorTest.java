@@ -42,6 +42,7 @@ class RequestContextExtractorTest {
         // Given
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(anyString())).thenReturn(null);
+        when(request.getHeader("X-Kafka-Bootstrap-Servers")).thenReturn("header-host:9092");
         when(request.getHeader("X-Kafka-Security-Protocol")).thenReturn("SASL_SSL");
         when(request.getHeader("X-Kafka-Username")).thenReturn("test-user");
         when(request.getHeader("X-Kafka-Password")).thenReturn("test-pass");
@@ -51,7 +52,7 @@ class RequestContextExtractorTest {
         var context = extractor.extract(request);
 
         // Then
-        assertEquals("localhost:9092", context.bootstrapServers());
+        assertEquals("header-host:9092", context.bootstrapServers());
         assertEquals("SASL_SSL", context.securityProtocol());
         assertEquals("test-user", context.username());
         assertEquals("test-pass", context.password());
@@ -65,12 +66,17 @@ class RequestContextExtractorTest {
         when(request.getParameter(anyString())).thenReturn(null);
         when(request.getHeader(anyString())).thenReturn(null);
 
-        // When
-        var context = extractor.extract(request);
+        // Then — bootstrapServers is required; no param/header/env means fail-fast
+        assertThrows(IllegalArgumentException.class, () -> extractor.extract(request));
+    }
 
-        // Then
-        assertNotNull(context);
-        assertEquals("localhost:9092", context.bootstrapServers());
+    @Test
+    void testExtractThrowsWhenBootstrapServersMissing() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(anyString())).thenReturn(null);
+        when(request.getHeader(anyString())).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class, () -> extractor.extract(request));
     }
 
     @Test
@@ -92,6 +98,7 @@ class RequestContextExtractorTest {
         // Given
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(anyString())).thenReturn(null);
+        when(request.getHeader("X-Kafka-Bootstrap-Servers")).thenReturn("localhost:9092");
         when(request.getHeader("X-Kafka-Security-Protocol")).thenReturn("SSL");
 
         // When
@@ -120,6 +127,7 @@ class RequestContextExtractorTest {
         // Given
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(anyString())).thenReturn(null);
+        when(request.getHeader("X-Kafka-Bootstrap-Servers")).thenReturn("localhost:9092");
         when(request.getHeader("X-Kafka-Security-Protocol")).thenReturn("   ");
 
         // When

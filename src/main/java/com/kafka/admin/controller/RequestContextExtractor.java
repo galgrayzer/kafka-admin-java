@@ -27,7 +27,11 @@ public class RequestContextExtractor {
                 AdminConstants.PARAM_BOOTSTRAP_SERVERS,
                 AdminConstants.HEADER_BOOTSTRAP_SERVERS,
                 AdminConstants.ENV_BOOTSTRAP_SERVERS,
-                config.getDefaultBootstrapServers());
+                null);
+
+        if (bootstrapServers == null || bootstrapServers.isBlank()) {
+            throw new IllegalArgumentException("bootstrapServers is required");
+        }
 
         String securityProtocol = resolveWithPriority(
                 request,
