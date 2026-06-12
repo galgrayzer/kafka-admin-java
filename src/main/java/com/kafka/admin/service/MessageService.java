@@ -2,6 +2,7 @@ package com.kafka.admin.service;
 
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.config.KafkaAdminConfig;
+import com.kafka.admin.model.request.MessageRecord;
 import com.kafka.admin.model.request.ProduceMessagesRequest;
 import com.kafka.admin.model.response.ConsumerOffsetResponse;
 import com.kafka.admin.model.response.MessageResponse;
@@ -299,7 +300,7 @@ public class MessageService {
 
         int count = 0;
         try (@SuppressWarnings("deprecation") KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {
-            for (ProduceMessagesRequest.ProducerRecord record : request.getRecords()) {
+            for (MessageRecord record : request.getRecords()) {
                 var producerRecord = createProducerRecord(request, record);
                 producer.send(producerRecord);
                 count++;
@@ -311,7 +312,7 @@ public class MessageService {
     }
 
     private ProducerRecord<String, String> createProducerRecord(
-            ProduceMessagesRequest request, ProduceMessagesRequest.ProducerRecord record) {
+            ProduceMessagesRequest request, MessageRecord record) {
 
         if (record.getHeaders() != null && !record.getHeaders().isEmpty()) {
             var headers = new RecordHeaders();

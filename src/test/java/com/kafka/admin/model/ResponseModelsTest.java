@@ -57,12 +57,12 @@ class ResponseModelsTest {
         
         response.setClusterId("cluster-123");
         
-        ClusterMetadataResponse.Broker broker = new ClusterMetadataResponse.Broker();
+        Broker broker = new Broker();
         broker.setId(0);
         broker.setHost("localhost");
         broker.setPort(9092);
         
-        ClusterMetadataResponse.TopicMetadata topic = new ClusterMetadataResponse.TopicMetadata();
+        TopicMetadata topic = new TopicMetadata();
         topic.setName("test-topic");
         topic.setPartitionCount(3);
         topic.setReplicationFactor(1);

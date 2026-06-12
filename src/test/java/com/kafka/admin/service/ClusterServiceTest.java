@@ -1,7 +1,9 @@
 package com.kafka.admin.service;
 
 import com.kafka.admin.client.KafkaAdminClientFactory;
+import com.kafka.admin.model.response.Broker;
 import com.kafka.admin.model.response.ClusterMetadataResponse;
+import com.kafka.admin.model.response.TopicMetadata;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
@@ -87,14 +89,14 @@ class ClusterServiceTest {
         assertEquals(2, result.getTopics().size());
 
         // Verify broker details
-        ClusterMetadataResponse.Broker broker0 = result.getBrokers().get(0);
+        Broker broker0 = result.getBrokers().get(0);
         assertEquals(0, broker0.getId());
         assertEquals("broker0", broker0.getHost());
         assertEquals(9092, broker0.getPort());
         assertEquals("rack1", broker0.getRack());
 
         // Verify topic details
-        ClusterMetadataResponse.TopicMetadata topic1 = result.getTopics().stream()
+        TopicMetadata topic1 = result.getTopics().stream()
                 .filter(t -> "topic1".equals(t.getName()))
                 .findFirst()
                 .orElse(null);

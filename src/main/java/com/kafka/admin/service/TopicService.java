@@ -4,6 +4,7 @@ import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.model.request.CreateTopicRequest;
 import com.kafka.admin.model.request.UpdateTopicConfigRequest;
 import com.kafka.admin.model.response.TopicPartitionOffsetResponse;
+import com.kafka.admin.model.response.PartitionReplica;
 import com.kafka.admin.model.response.TopicResponse;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
@@ -173,9 +174,9 @@ public class TopicService {
             response.setReplicationFactor((short) topicDescription.partitions().get(0).replicas().size());
         }
 
-        List<TopicResponse.PartitionReplica> partitionReplicas = topicDescription.partitions().stream()
+        List<PartitionReplica> partitionReplicas = topicDescription.partitions().stream()
                 .map(p -> {
-                    TopicResponse.PartitionReplica replica = new TopicResponse.PartitionReplica();
+                    PartitionReplica replica = new PartitionReplica();
                     replica.setPartitionId(p.partition());
                     replica.setReplicas(p.replicas().stream().map(Node::id).collect(Collectors.toList()));
                     replica.setIsr(p.isr().stream().map(Node::id).collect(Collectors.toList()));
