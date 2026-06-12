@@ -1,5 +1,6 @@
 package com.kafka.admin.controller;
 
+import com.kafka.admin.model.request.AuthCheckRequest;
 import com.kafka.admin.model.request.CreateUserRequest;
 import com.kafka.admin.model.response.ApiResponse;
 import com.kafka.admin.model.response.UserResponse;
@@ -89,15 +90,13 @@ public class UserController {
     @PostMapping("/authenticate")
     @Operation(summary = "Check authentication", description = "Verify if a user can authenticate and determine their role (consumer/producer/both)")
     public ApiResponse checkAuthentication(
-            @Parameter(description = "Username to check") @RequestParam String username,
-            @Parameter(description = "Password to verify") @RequestParam String password,
-            @Parameter(description = "Topic name to check permissions for") @RequestParam String topic,
+            @Valid @RequestBody AuthCheckRequest authRequest,
             @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
             @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
-        var result = userService.checkAuthentication(username, password, topic,
+        var result = userService.checkAuthentication(authRequest.getUsername(), authRequest.getPassword(), authRequest.getTopic(),
                 ctx.bootstrapServers(), ctx.securityProtocol(),
                 ctx.username(), ctx.password(), ctx.saslMechanism());
         return ApiResponse.success("Authentication check completed", result);

@@ -55,28 +55,26 @@ public class KafkaAdminClientFactory {
             @Nullable String password,
             @Nullable String saslMechanism) {
 
-        String finalBootstrapServers = defaultIfNull(bootstrapServers, config.getDefaultBootstrapServers());
-        String finalSecurityProtocol = defaultIfNull(securityProtocol, config.getDefaultSecurityProtocol());
+        if (bootstrapServers == null || bootstrapServers.isBlank()) {
+            throw new IllegalArgumentException("bootstrapServers is required");
+        }
 
+        String finalSecurityProtocol = defaultIfNull(securityProtocol, config.getDefaultSecurityProtocol());
         SecurityProtocol protocol = SecurityProtocol.forName(finalSecurityProtocol);
 
         Map<String, Object> props = new HashMap<>();
-        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, finalBootstrapServers);
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, protocol.name());
 
         props.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, config.getDefaultRequestTimeoutMs());
         props.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, config.getDefaultAdminClientTimeoutMs());
 
         if (isSasl(protocol)) {
-            String user = defaultIfNull(username, config.getDefaultUsername());
-            String pass = defaultIfNull(password, config.getDefaultPassword());
-            String mechanism = defaultIfNull(saslMechanism, config.getDefaultSaslMechanism());
-
-            if (user == null || pass == null) {
+            if (username == null || password == null) {
                 throw new IllegalArgumentException("SASL authentication requires both username and password.");
             }
-            props.put(SaslConfigs.SASL_MECHANISM, mechanism);
-            props.put(SaslConfigs.SASL_JAAS_CONFIG, buildJaasConfig(user, pass));
+            props.put(SaslConfigs.SASL_MECHANISM, saslMechanism);
+            props.put(SaslConfigs.SASL_JAAS_CONFIG, buildJaasConfig(username, password));
         }
 
         return props;
