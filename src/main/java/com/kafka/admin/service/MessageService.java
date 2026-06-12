@@ -19,6 +19,8 @@ import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -28,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class MessageService {
 
+    private static final Logger log = LoggerFactory.getLogger(MessageService.class);
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration MAX_POLL_INTERVAL = Duration.ofMinutes(5);
 
@@ -47,6 +50,7 @@ public class MessageService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Getting topic offsets: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -92,6 +96,7 @@ public class MessageService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Fetching messages from offset: topic={}, partition={}", topicName, partition);
         List<TopicPartition> partitions = getPartitions(topicName, partition, bootstrapServers,
                 securityProtocol, username, password, saslMechanism);
 
@@ -132,6 +137,7 @@ public class MessageService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Fetching messages from timestamp: topic={}, partition={}", topicName, partition);
         List<TopicPartition> partitions = getPartitions(topicName, partition, bootstrapServers,
                 securityProtocol, username, password, saslMechanism);
 
@@ -288,6 +294,7 @@ public class MessageService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.info("Producing messages: topic={}, recordCount={}", request.getTopic(), request.getRecords().size());
         Properties props = createProducerProperties(bootstrapServers, securityProtocol, username, password, saslMechanism);
 
         int count = 0;

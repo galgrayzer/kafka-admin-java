@@ -12,6 +12,8 @@ import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourceType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -34,6 +38,7 @@ public class UserService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Listing users");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -61,6 +66,7 @@ public class UserService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Creating user: username={}", request.getUsername());
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -94,6 +100,7 @@ public class UserService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Deleting user: username={}", username);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
 
@@ -118,6 +125,7 @@ public class UserService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Checking user existence: username={}", username);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
 
@@ -137,6 +145,7 @@ public class UserService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Checking authentication: username={}, topic={}", username, topic);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 

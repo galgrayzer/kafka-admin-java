@@ -5,6 +5,8 @@ import com.kafka.admin.model.response.ClusterMetadataResponse;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,6 +16,8 @@ import java.util.Set;
 
 @Service
 public class ClusterService {
+
+    private static final Logger log = LoggerFactory.getLogger(ClusterService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -28,6 +32,7 @@ public class ClusterService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Getting cluster metadata");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -78,6 +83,7 @@ public class ClusterService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Listing topics");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 

@@ -12,6 +12,8 @@ import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -19,6 +21,8 @@ import java.util.concurrent.ExecutionException;
 
 @Service
 public class ConsumerService {
+
+    private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -35,6 +39,7 @@ public class ConsumerService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Getting consumer offsets: groupId={}, topic={}", groupId, topic);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -64,6 +69,7 @@ public class ConsumerService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Resetting consumer offsets: groupId={}, topic={}", groupId, request.getTopic());
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -112,6 +118,7 @@ public class ConsumerService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Resetting consumer offsets by timestamp: groupId={}, topic={}", groupId, request.getTopic());
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -149,6 +156,7 @@ public class ConsumerService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Copying consumer offsets: groupId={}, sourceGroup={}", groupId, request.getSourceGroup());
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -177,6 +185,7 @@ public class ConsumerService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Updating partition offsets: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 

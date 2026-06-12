@@ -9,6 +9,8 @@ import org.apache.kafka.common.quota.ClientQuotaAlteration;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
 import org.apache.kafka.common.quota.ClientQuotaFilter;
 import org.apache.kafka.common.quota.ClientQuotaFilterComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class QuotaService {
+
+    private static final Logger log = LoggerFactory.getLogger(QuotaService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -32,6 +36,7 @@ public class QuotaService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Listing quotas");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -89,6 +94,7 @@ public class QuotaService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Creating/altering quota: username={}", request.getUsername());
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -122,6 +128,7 @@ public class QuotaService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Deleting quota: username={}", username);
         if (username == null || username.isEmpty()) {
             throw new IllegalArgumentException("Username is required to delete a quota");
         }
@@ -152,6 +159,7 @@ public class QuotaService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Getting quota: username={}", username);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
 

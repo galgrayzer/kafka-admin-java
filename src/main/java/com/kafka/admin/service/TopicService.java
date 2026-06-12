@@ -11,6 +11,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class TopicService {
+
+    private static final Logger log = LoggerFactory.getLogger(TopicService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -33,6 +37,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Listing topics");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -60,6 +65,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Getting topic: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -82,6 +88,8 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Creating topic: name={}, partitions={}, replicationFactor={}",
+                request.getName(), request.getPartitions(), request.getReplicationFactor());
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -106,6 +114,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Deleting topic: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -122,6 +131,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Updating topic config: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -185,6 +195,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Getting partition offsets: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
