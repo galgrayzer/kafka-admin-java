@@ -3,11 +3,17 @@ package com.kafka.admin.service;
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.model.request.CreateTopicRequest;
 import com.kafka.admin.model.request.UpdateTopicConfigRequest;
+import com.kafka.admin.model.response.TopicPartitionOffsetResponse;
+import com.kafka.admin.model.response.PartitionReplica;
 import com.kafka.admin.model.response.TopicResponse;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartitionInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -16,6 +22,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class TopicService {
+
+    private static final Logger log = LoggerFactory.getLogger(TopicService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -30,6 +38,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Listing topics");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -57,6 +66,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Getting topic: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -79,6 +89,8 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Creating topic: name={}, partitions={}, replicationFactor={}",
+                request.getName(), request.getPartitions(), request.getReplicationFactor());
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -103,6 +115,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Deleting topic: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -119,6 +132,7 @@ public class TopicService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Updating topic config: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -160,9 +174,9 @@ public class TopicService {
             response.setReplicationFactor((short) topicDescription.partitions().get(0).replicas().size());
         }
 
-        List<TopicResponse.PartitionReplica> partitionReplicas = topicDescription.partitions().stream()
+        List<PartitionReplica> partitionReplicas = topicDescription.partitions().stream()
                 .map(p -> {
-                    TopicResponse.PartitionReplica replica = new TopicResponse.PartitionReplica();
+                    PartitionReplica replica = new PartitionReplica();
                     replica.setPartitionId(p.partition());
                     replica.setReplicas(p.replicas().stream().map(Node::id).collect(Collectors.toList()));
                     replica.setIsr(p.isr().stream().map(Node::id).collect(Collectors.toList()));
@@ -172,5 +186,47 @@ public class TopicService {
         
         response.setPartitionsReplicas(partitionReplicas);
         return response;
+    }
+
+    public List<TopicPartitionOffsetResponse> getTopicPartitionOffsets(
+            String topicName,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String username,
+            @Nullable String password,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+
+        log.debug("Getting partition offsets: topic={}", topicName);
+        try (Admin admin = adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism)) {
+
+            DescribeTopicsResult topicResult = admin.describeTopics(Collections.singletonList(topicName));
+            TopicDescription topicDesc = topicResult.allTopicNames().get().get(topicName);
+
+            Map<TopicPartition, OffsetSpec> beginningOffsets = new HashMap<>();
+            Map<TopicPartition, OffsetSpec> endOffsets = new HashMap<>();
+
+            for (TopicPartitionInfo tpInfo : topicDesc.partitions()) {
+                TopicPartition tp = new TopicPartition(topicName, tpInfo.partition());
+                beginningOffsets.put(tp, OffsetSpec.earliest());
+                endOffsets.put(tp, OffsetSpec.latest());
+            }
+
+            ListOffsetsResult beginningResult = admin.listOffsets(beginningOffsets);
+            ListOffsetsResult endResult = admin.listOffsets(endOffsets);
+
+            List<TopicPartitionOffsetResponse> responses = new ArrayList<>();
+            for (TopicPartitionInfo tpInfo : topicDesc.partitions()) {
+                TopicPartition tp = new TopicPartition(topicName, tpInfo.partition());
+                TopicPartitionOffsetResponse response = new TopicPartitionOffsetResponse();
+                response.setTopic(topicName);
+                response.setPartitionId(tpInfo.partition());
+                response.setBeginningOffset(beginningResult.partitionResult(tp).get().offset());
+                response.setEndOffset(endResult.partitionResult(tp).get().offset());
+                responses.add(response);
+            }
+
+            return responses;
+        }
     }
 }

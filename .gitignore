@@ -1,6 +1,9 @@
 # Kiro
 .kiro/
 
+# opencode
+.opencode/
+
 # Maven
 target/
 pom.xml.tag
@@ -43,4 +46,3 @@ Thumbs.db
 
 # Logs
 logs/
-*.log

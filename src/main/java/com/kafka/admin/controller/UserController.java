@@ -1,5 +1,6 @@
 package com.kafka.admin.controller;
 
+import com.kafka.admin.model.request.AuthCheckRequest;
 import com.kafka.admin.model.request.CreateUserRequest;
 import com.kafka.admin.model.response.ApiResponse;
 import com.kafka.admin.model.response.UserResponse;
@@ -30,8 +31,8 @@ public class UserController {
     @GetMapping
     @Operation(summary = "List all users", description = "Get a list of all SCRAM users in the Kafka cluster")
     public List<UserResponse> listUsers(
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -44,8 +45,8 @@ public class UserController {
     @Operation(summary = "Create a new user", description = "Create a new SCRAM user")
     public ApiResponse createUser(
             @Valid @RequestBody CreateUserRequest createRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -58,8 +59,8 @@ public class UserController {
     @Operation(summary = "Delete a user", description = "Delete an existing SCRAM user")
     public ApiResponse deleteUser(
             @Parameter(description = "Username") @PathVariable String username,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -72,8 +73,8 @@ public class UserController {
     @Operation(summary = "Validate user exists", description = "Check if a SCRAM user exists")
     public ApiResponse validateUser(
             @Parameter(description = "Username") @PathVariable String username,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -84,5 +85,20 @@ public class UserController {
         } else {
             return ApiResponse.success("User does not exist", false);
         }
+    }
+
+    @PostMapping("/authenticate")
+    @Operation(summary = "Check authentication", description = "Verify if a user can authenticate and determine their role (consumer/producer/both)")
+    public ApiResponse checkAuthentication(
+            @Valid @RequestBody AuthCheckRequest authRequest,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+
+        var ctx = contextExtractor.extract(request);
+        var result = userService.checkAuthentication(authRequest.getUsername(), authRequest.getPassword(), authRequest.getTopic(),
+                ctx.bootstrapServers(), ctx.securityProtocol(),
+                ctx.username(), ctx.password(), ctx.saslMechanism());
+        return ApiResponse.success("Authentication check completed", result);
     }
 }

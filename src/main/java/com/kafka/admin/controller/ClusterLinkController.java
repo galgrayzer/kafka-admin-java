@@ -3,6 +3,7 @@ package com.kafka.admin.controller;
 import com.kafka.admin.model.request.*;
 import com.kafka.admin.model.response.ApiResponse;
 import com.kafka.admin.model.response.ClusterLinkResponse;
+import com.kafka.admin.model.response.MirrorTopicResponse;
 import com.kafka.admin.service.ClusterLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,12 +31,39 @@ public class ClusterLinkController {
     @GetMapping
     @Operation(summary = "List all cluster links", description = "Get a list of all cluster links")
     public List<ClusterLinkResponse> listClusterLinks(
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
         return clusterLinkService.listClusterLinks(ctx.bootstrapServers(), ctx.securityProtocol(), 
+                ctx.username(), ctx.password(), ctx.saslMechanism());
+    }
+
+    @GetMapping("/{linkName}/mirror-topics")
+    @Operation(summary = "Describe all mirror topics", description = "Get details of all mirror topics on a cluster link")
+    public List<MirrorTopicResponse> describeMirrorTopics(
+            @Parameter(description = "Link name") @PathVariable String linkName,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+        
+        var ctx = contextExtractor.extract(request);
+        return clusterLinkService.describeMirrorTopics(linkName, ctx.bootstrapServers(), ctx.securityProtocol(), 
+                ctx.username(), ctx.password(), ctx.saslMechanism());
+    }
+
+    @GetMapping("/{linkName}/mirror-topics/{topicName}")
+    @Operation(summary = "Describe a mirror topic", description = "Get details of a specific mirror topic on a cluster link")
+    public MirrorTopicResponse describeMirrorTopic(
+            @Parameter(description = "Link name") @PathVariable String linkName,
+            @Parameter(description = "Topic name") @PathVariable String topicName,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+        
+        var ctx = contextExtractor.extract(request);
+        return clusterLinkService.describeMirrorTopic(linkName, topicName, ctx.bootstrapServers(), ctx.securityProtocol(),
                 ctx.username(), ctx.password(), ctx.saslMechanism());
     }
 
@@ -44,8 +72,8 @@ public class ClusterLinkController {
     @Operation(summary = "Create a cluster link", description = "Create a new cluster link")
     public ApiResponse createClusterLink(
             @Valid @RequestBody CreateClusterLinkRequest createRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -58,8 +86,8 @@ public class ClusterLinkController {
     @Operation(summary = "Delete a cluster link", description = "Delete an existing cluster link")
     public ApiResponse deleteClusterLink(
             @Parameter(description = "Link name") @PathVariable String linkName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -74,8 +102,8 @@ public class ClusterLinkController {
     public ApiResponse createMirrorTopics(
             @Parameter(description = "Link name") @PathVariable String linkName,
             @Valid @RequestBody CreateMirrorTopicsRequest request,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest httpRequest) throws Exception {
         
         var ctx = contextExtractor.extract(httpRequest);
@@ -89,8 +117,8 @@ public class ClusterLinkController {
     public ApiResponse reverseAndStart(
             @Parameter(description = "Link name") @PathVariable String linkName,
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -104,8 +132,8 @@ public class ClusterLinkController {
     public ApiResponse truncateAndRestore(
             @Parameter(description = "Link name") @PathVariable String linkName,
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -119,8 +147,8 @@ public class ClusterLinkController {
     public ApiResponse failover(
             @Parameter(description = "Link name") @PathVariable String linkName,
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest requestHttp) throws Exception {
         
         var ctx = contextExtractor.extract(requestHttp);
@@ -134,8 +162,8 @@ public class ClusterLinkController {
     public ApiResponse promote(
             @Parameter(description = "Link name") @PathVariable String linkName,
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);

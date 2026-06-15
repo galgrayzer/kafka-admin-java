@@ -2,7 +2,7 @@ package com.kafka.admin.service;
 
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.config.KafkaAdminConfig;
-import com.kafka.admin.model.request.FetchMessagesRequest;
+import com.kafka.admin.model.request.MessageRecord;
 import com.kafka.admin.model.request.ProduceMessagesRequest;
 import com.kafka.admin.model.response.ConsumerOffsetResponse;
 import com.kafka.admin.model.response.MessageResponse;
@@ -20,6 +20,8 @@ import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -29,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class MessageService {
 
+    private static final Logger log = LoggerFactory.getLogger(MessageService.class);
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration MAX_POLL_INTERVAL = Duration.ofMinutes(5);
 
@@ -48,6 +51,7 @@ public class MessageService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Getting topic offsets: topic={}", topicName);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -82,83 +86,6 @@ public class MessageService {
         }
     }
 
-    public List<MessageResponse> fetchMessages(
-            FetchMessagesRequest request,
-            String bootstrapServers,
-            @Nullable String securityProtocol,
-            @Nullable String username,
-            @Nullable String password,
-            @Nullable String saslMechanism) throws Exception {
-
-        Integer partition = request.getPartition();
-        Long offset = request.getOffset();
-        Long timestamp = request.getTimestamp();
-        String startingPosition = request.getStartingPosition();
-        Integer maxMessages = request.getMaxMessages() != null ? request.getMaxMessages() : 100;
-
-        if (timestamp != null) {
-            return fetchFromTimestamp(
-                    request.getTopic(),
-                    partition,
-                    timestamp,
-                    maxMessages,
-                    bootstrapServers,
-                    securityProtocol,
-                    username,
-                    password,
-                    saslMechanism);
-        }
-
-        if (offset != null) {
-            return fetchFromOffset(
-                    request.getTopic(),
-                    partition,
-                    offset,
-                    maxMessages,
-                    bootstrapServers,
-                    securityProtocol,
-                    username,
-                    password,
-                    saslMechanism);
-        }
-
-        if (startingPosition != null) {
-            if ("latest".equalsIgnoreCase(startingPosition)) {
-                return fetchFromOffset(
-                        request.getTopic(),
-                        partition,
-                        -1L,
-                        maxMessages,
-                        bootstrapServers,
-                        securityProtocol,
-                        username,
-                        password,
-                        saslMechanism);
-            }
-            return fetchFromOffset(
-                    request.getTopic(),
-                    partition,
-                    0L,
-                    maxMessages,
-                    bootstrapServers,
-                    securityProtocol,
-                    username,
-                    password,
-                    saslMechanism);
-        }
-
-        return fetchFromOffset(
-                request.getTopic(),
-                partition,
-                0L,
-                maxMessages,
-                bootstrapServers,
-                securityProtocol,
-                username,
-                password,
-                saslMechanism);
-    }
-
     public List<MessageResponse> fetchFromOffset(
             String topicName,
             @Nullable Integer partition,
@@ -170,6 +97,7 @@ public class MessageService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Fetching messages from offset: topic={}, partition={}", topicName, partition);
         List<TopicPartition> partitions = getPartitions(topicName, partition, bootstrapServers,
                 securityProtocol, username, password, saslMechanism);
 
@@ -210,6 +138,7 @@ public class MessageService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Fetching messages from timestamp: topic={}, partition={}", topicName, partition);
         List<TopicPartition> partitions = getPartitions(topicName, partition, bootstrapServers,
                 securityProtocol, username, password, saslMechanism);
 
@@ -366,11 +295,12 @@ public class MessageService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.info("Producing messages: topic={}, recordCount={}", request.getTopic(), request.getRecords().size());
         Properties props = createProducerProperties(bootstrapServers, securityProtocol, username, password, saslMechanism);
 
         int count = 0;
         try (@SuppressWarnings("deprecation") KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {
-            for (ProduceMessagesRequest.ProducerRecord record : request.getRecords()) {
+            for (MessageRecord record : request.getRecords()) {
                 var producerRecord = createProducerRecord(request, record);
                 producer.send(producerRecord);
                 count++;
@@ -382,7 +312,7 @@ public class MessageService {
     }
 
     private ProducerRecord<String, String> createProducerRecord(
-            ProduceMessagesRequest request, ProduceMessagesRequest.ProducerRecord record) {
+            ProduceMessagesRequest request, MessageRecord record) {
 
         if (record.getHeaders() != null && !record.getHeaders().isEmpty()) {
             var headers = new RecordHeaders();

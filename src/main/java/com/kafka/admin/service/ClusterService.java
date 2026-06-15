@@ -1,10 +1,14 @@
 package com.kafka.admin.service;
 
 import com.kafka.admin.client.KafkaAdminClientFactory;
+import com.kafka.admin.model.response.Broker;
 import com.kafka.admin.model.response.ClusterMetadataResponse;
+import com.kafka.admin.model.response.TopicMetadata;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,6 +18,8 @@ import java.util.Set;
 
 @Service
 public class ClusterService {
+
+    private static final Logger log = LoggerFactory.getLogger(ClusterService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -28,6 +34,7 @@ public class ClusterService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Getting cluster metadata");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -37,9 +44,9 @@ public class ClusterService {
             response.setClusterId(clusterResult.clusterId().get());
 
             var nodes = clusterResult.nodes().get();
-            List<ClusterMetadataResponse.Broker> brokers = new ArrayList<>();
+            List<Broker> brokers = new ArrayList<>();
             for (Node node : nodes) {
-                ClusterMetadataResponse.Broker broker = new ClusterMetadataResponse.Broker();
+                Broker broker = new Broker();
                 broker.setId(node.id());
                 broker.setHost(node.host());
                 broker.setPort(node.port());
@@ -50,12 +57,12 @@ public class ClusterService {
 
             ListTopicsResult topicsResult = admin.listTopics();
             Set<String> topicNames = topicsResult.names().get();
-            List<ClusterMetadataResponse.TopicMetadata> topics = new ArrayList<>();
+            List<TopicMetadata> topics = new ArrayList<>();
             if (!topicNames.isEmpty()) {
                 DescribeTopicsResult describeResult = admin.describeTopics(topicNames);
                 Map<String, TopicDescription> topicDescriptions = describeResult.allTopicNames().get();
                 for (TopicDescription topicDesc : topicDescriptions.values()) {
-                    ClusterMetadataResponse.TopicMetadata topicMetadata = new ClusterMetadataResponse.TopicMetadata();
+                    TopicMetadata topicMetadata = new TopicMetadata();
                     topicMetadata.setName(topicDesc.name());
                     topicMetadata.setPartitionCount(topicDesc.partitions().size());
                     if (!topicDesc.partitions().isEmpty()) {
@@ -78,6 +85,7 @@ public class ClusterService {
             @Nullable String password,
             @Nullable String saslMechanism) throws Exception {
 
+        log.debug("Listing topics");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 

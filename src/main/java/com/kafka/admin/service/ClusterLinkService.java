@@ -3,10 +3,13 @@ package com.kafka.admin.service;
 import com.kafka.admin.client.KafkaAdminClientFactory;
 import com.kafka.admin.model.request.*;
 import com.kafka.admin.model.response.ClusterLinkResponse;
+import com.kafka.admin.model.response.MirrorTopicResponse;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.SaslConfigs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -15,6 +18,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class ClusterLinkService {
+
+    private static final Logger log = LoggerFactory.getLogger(ClusterLinkService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -28,6 +33,7 @@ public class ClusterLinkService {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.debug("Listing cluster links");
         try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
             
@@ -58,6 +64,77 @@ public class ClusterLinkService {
         }
     }
 
+    public List<MirrorTopicResponse> describeMirrorTopics(
+            String linkName,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String username,
+            @Nullable String password,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.debug("Describing mirror topics: link={}", linkName);
+        try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
+
+            Set<String> allTopics = admin.listTopics().names().get();
+            if (allTopics.isEmpty()) return List.of();
+
+            DescribeMirrorsOptions options = new DescribeMirrorsOptions()
+                    .linkNames(Collections.singletonList(linkName));
+            DescribeMirrorsResult result = admin.describeMirrors(allTopics, options);
+
+            try {
+                Map<String, MirrorTopicDescription> descriptions = result.all().get();
+                return descriptions.values().stream()
+                        .map(this::toMirrorTopicResponse)
+                        .collect(Collectors.toList());
+            } catch (ExecutionException e) {
+                List<MirrorTopicResponse> responses = new ArrayList<>();
+                for (String topic : allTopics) {
+                    try {
+                        MirrorTopicDescription desc = result.result().get(topic).get();
+                        if (desc.linkName().equals(linkName)) {
+                            responses.add(toMirrorTopicResponse(desc));
+                        }
+                    } catch (Exception ignored) {
+                        // Not a mirror topic, skip
+                    }
+                }
+                return responses;
+            }
+        }
+    }
+
+    public MirrorTopicResponse describeMirrorTopic(
+            String linkName,
+            String topicName,
+            String bootstrapServers,
+            @Nullable String securityProtocol,
+            @Nullable String username,
+            @Nullable String password,
+            @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.debug("Describing mirror topic: link={}, topic={}", linkName, topicName);
+        try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
+
+            DescribeMirrorsOptions options = new DescribeMirrorsOptions()
+                    .linkNames(Collections.singletonList(linkName));
+            DescribeMirrorsResult result = admin.describeMirrors(
+                    Collections.singletonList(topicName), options);
+            MirrorTopicDescription desc = result.result().get(topicName).get();
+            return toMirrorTopicResponse(desc);
+        }
+    }
+
+    private MirrorTopicResponse toMirrorTopicResponse(MirrorTopicDescription desc) {
+        MirrorTopicResponse response = new MirrorTopicResponse();
+        response.setTopicName(desc.mirrorTopic());
+        response.setLinkName(desc.linkName());
+        response.setMirrorState(desc.state().name());
+        response.setSourceTopicId(desc.sourceTopicId().toString());
+        response.setNumPartitions(desc.numPartitions());
+        return response;
+    }
+
     public void createClusterLink(
             CreateClusterLinkRequest request,
             String bootstrapServers,
@@ -65,6 +142,7 @@ public class ClusterLinkService {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.info("Creating cluster link: name={}", request.getLinkName());
         try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
             
@@ -94,6 +172,7 @@ public class ClusterLinkService {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.info("Deleting cluster link: name={}", linkName);
         try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
             admin.deleteClusterLinks(Collections.singletonList(linkName), new DeleteClusterLinksOptions()).all().get();
@@ -108,6 +187,7 @@ public class ClusterLinkService {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.info("Creating mirror topics: link={}, count={}", linkName, request.getTopics().size());
         try (ConfluentAdmin admin = (ConfluentAdmin) adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism, true)) {
             
@@ -135,6 +215,7 @@ public class ClusterLinkService {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.info("Reversing and starting mirror: link={}, topic={}", linkName, topicName);
         executeMirrorOp(linkName, topicName, AlterMirrorOp.REVERSE_AND_START_REMOTE_MIRROR, bootstrapServers, securityProtocol, username, password, saslMechanism);
     }
 
@@ -146,6 +227,7 @@ public class ClusterLinkService {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.info("Truncating and restoring mirror: link={}, topic={}", linkName, topicName);
         executeMirrorOp(linkName, topicName, AlterMirrorOp.TRUNCATE_AND_RESTORE, bootstrapServers, securityProtocol, username, password, saslMechanism);
     }
 
@@ -157,6 +239,7 @@ public class ClusterLinkService {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.info("Failing over mirror: link={}, topic={}", linkName, topicName);
         executeMirrorOp(linkName, topicName, AlterMirrorOp.FAILOVER, bootstrapServers, securityProtocol, username, password, saslMechanism);
     }
 
@@ -168,6 +251,7 @@ public class ClusterLinkService {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
+        log.info("Promoting mirror: link={}, topic={}", linkName, topicName);
         executeMirrorOp(linkName, topicName, AlterMirrorOp.PROMOTE, bootstrapServers, securityProtocol, username, password, saslMechanism);
     }
 

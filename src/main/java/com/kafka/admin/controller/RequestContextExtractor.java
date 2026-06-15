@@ -1,23 +1,18 @@
 package com.kafka.admin.controller;
 
+import com.kafka.admin.config.KafkaAdminConfig;
 import com.kafka.admin.constants.AdminConstants;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @Component
 public class RequestContextExtractor {
 
-    @Value("${kafka-admin.default-bootstrap-servers:" + AdminConstants.DEFAULT_BOOTSTRAP_SERVERS + "}")
-    private String defaultBootstrapServers;
+    private final KafkaAdminConfig config;
 
-    @Value("${kafka-admin.default-security-protocol:" + AdminConstants.DEFAULT_SECURITY_PROTOCOL + "}")
-    private String defaultSecurityProtocol;
-
-    @Value("${kafka-admin.default-sasl-mechanism:" + AdminConstants.DEFAULT_SASL_MECHANISM + "}")
-    private String defaultSaslMechanism;
+    public RequestContextExtractor(KafkaAdminConfig config) {
+        this.config = config;
+    }
 
     public record KafkaSecurityContext(
             String bootstrapServers,
@@ -27,42 +22,75 @@ public class RequestContextExtractor {
             String saslMechanism) {}
 
     public KafkaSecurityContext extract(HttpServletRequest request) {
-        String bootstrapServers = getParamOrHeader(request, AdminConstants.PARAM_BOOTSTRAP_SERVERS, 
-                AdminConstants.HEADER_SECURITY_PROTOCOL, defaultBootstrapServers);
-        
-        String securityProtocol = getHeaderOrDefault(request, AdminConstants.HEADER_SECURITY_PROTOCOL, 
-                defaultSecurityProtocol);
-        
-        String username = request.getHeader(AdminConstants.HEADER_USERNAME);
-        String password = request.getHeader(AdminConstants.HEADER_PASSWORD);
-        String saslMechanism = getHeaderOrDefault(request, AdminConstants.HEADER_SASL_MECHANISM, 
-                defaultSaslMechanism);
+        String bootstrapServers = resolveWithPriority(
+                request,
+                AdminConstants.PARAM_BOOTSTRAP_SERVERS,
+                AdminConstants.HEADER_BOOTSTRAP_SERVERS,
+                AdminConstants.ENV_BOOTSTRAP_SERVERS,
+                null);
+
+        if (bootstrapServers == null || bootstrapServers.isBlank()) {
+            throw new IllegalArgumentException("bootstrapServers is required");
+        }
+
+        String securityProtocol = resolveWithPriority(
+                request,
+                null,
+                AdminConstants.HEADER_SECURITY_PROTOCOL,
+                AdminConstants.ENV_SECURITY_PROTOCOL,
+                config.getDefaultSecurityProtocol());
+
+        String username = resolveWithPriority(
+                request,
+                null,
+                AdminConstants.HEADER_USERNAME,
+                AdminConstants.ENV_USERNAME,
+                config.getDefaultUsername());
+
+        String password = resolveWithPriority(
+                request,
+                null,
+                AdminConstants.HEADER_PASSWORD,
+                AdminConstants.ENV_PASSWORD,
+                config.getDefaultPassword());
+
+        String saslMechanism = resolveWithPriority(
+                request,
+                null,
+                AdminConstants.HEADER_SASL_MECHANISM,
+                AdminConstants.ENV_SASL_MECHANISM,
+                config.getDefaultSaslMechanism());
 
         return new KafkaSecurityContext(
                 bootstrapServers,
                 securityProtocol,
                 username,
                 password,
-                saslMechanism
-        );
+                saslMechanism);
     }
 
-    private String getParamOrHeader(HttpServletRequest request, String paramName, String headerName, String defaultValue) {
-        String paramValue = request.getParameter(paramName);
-        if (paramValue != null && !paramValue.isBlank()) {
-            return paramValue;
+    private String resolveWithPriority(HttpServletRequest request, String paramName, String headerName, String envName, String defaultValue) {
+        if (paramName != null) {
+            String paramValue = request.getParameter(paramName);
+            if (paramValue != null && !paramValue.isBlank()) {
+                return paramValue;
+            }
         }
-        
-        String headerValue = request.getHeader(headerName);
-        if (headerValue != null && !headerValue.isBlank()) {
-            return headerValue;
+
+        if (headerName != null) {
+            String headerValue = request.getHeader(headerName);
+            if (headerValue != null && !headerValue.isBlank()) {
+                return headerValue;
+            }
         }
-        
+
+        if (envName != null) {
+            String envValue = System.getenv(envName);
+            if (envValue != null && !envValue.isBlank()) {
+                return envValue;
+            }
+        }
+
         return defaultValue;
-    }
-
-    private String getHeaderOrDefault(HttpServletRequest request, String headerName, String defaultValue) {
-        String headerValue = request.getHeader(headerName);
-        return (headerValue != null && !headerValue.isBlank()) ? headerValue : defaultValue;
     }
 }

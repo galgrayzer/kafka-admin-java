@@ -9,14 +9,19 @@ import org.apache.kafka.common.quota.ClientQuotaAlteration;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
 import org.apache.kafka.common.quota.ClientQuotaFilter;
 import org.apache.kafka.common.quota.ClientQuotaFilterComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Service
 public class QuotaService {
+
+    private static final Logger log = LoggerFactory.getLogger(QuotaService.class);
 
     private final KafkaAdminClientFactory adminClientFactory;
 
@@ -31,6 +36,7 @@ public class QuotaService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Listing quotas");
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -38,29 +44,46 @@ public class QuotaService {
             Map<ClientQuotaEntity, Map<String, Double>> quotas = result.entities().get();
 
             return quotas.entrySet().stream()
-                    .map(entry -> {
-                        QuotaResponse response = new QuotaResponse();
+                    .flatMap(entry -> {
                         Map<String, String> entityMap = entry.getKey().entries();
                         
-                        if (entityMap.containsKey("user")) {
-                            response.setEntityType("user");
-                            response.setEntityName(entityMap.get("user"));
-                        } else if (entityMap.containsKey("client-id")) {
-                            response.setEntityType("client-id");
-                            response.setEntityName(entityMap.get("client-id"));
-                        } else {
-                            response.setEntityType("default");
-                            response.setEntityName("");
-                        }
-
-                        Map<String, String> configs = new HashMap<>();
-                        entry.getValue().forEach((key, value) -> configs.put(key, String.valueOf(value)));
-                        response.setConfigs(configs);
+                        List<QuotaResponse> responses = new ArrayList<>();
                         
-                        return response;
+                        String entityType;
+                        String entityName;
+                        
+                        if (entityMap.containsKey("user") && entityMap.containsKey("client-id")) {
+                            responses.add(createQuotaResponse("user", entityMap.get("user"), entry.getValue()));
+                            responses.add(createQuotaResponse("client-id", entityMap.get("client-id"), entry.getValue()));
+                            return responses.stream();
+                        } else if (entityMap.containsKey("user")) {
+                            entityType = "user";
+                            entityName = entityMap.get("user");
+                        } else if (entityMap.containsKey("client-id")) {
+                            entityType = "client-id";
+                            entityName = entityMap.get("client-id");
+                        } else {
+                            entityType = "default";
+                            entityName = "";
+                        }
+                        
+                        responses.add(createQuotaResponse(entityType, entityName, entry.getValue()));
+                        return responses.stream();
                     })
                     .collect(Collectors.toList());
         }
+    }
+
+    private QuotaResponse createQuotaResponse(String entityType, String entityName, Map<String, Double> values) {
+        QuotaResponse response = new QuotaResponse();
+        response.setEntityType(entityType);
+        response.setEntityName(entityName);
+
+        Map<String, String> configs = new HashMap<>();
+        values.forEach((key, value) -> configs.put(key, BigDecimal.valueOf(value).toPlainString()));
+        response.setConfigs(configs);
+        
+        return response;
     }
 
     public void createOrAlterQuota(
@@ -71,6 +94,7 @@ public class QuotaService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Creating/altering quota: username={}", request.getUsername());
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, username, password, saslMechanism)) {
 
@@ -104,6 +128,7 @@ public class QuotaService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.info("Deleting quota: username={}", username);
         if (username == null || username.isEmpty()) {
             throw new IllegalArgumentException("Username is required to delete a quota");
         }
@@ -134,6 +159,7 @@ public class QuotaService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
+        log.debug("Getting quota: username={}", username);
         try (Admin admin = adminClientFactory.createAdminClient(
                 bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
 
@@ -145,7 +171,7 @@ public class QuotaService {
             Map<ClientQuotaEntity, Map<String, Double>> quotas = result.entities().get();
 
             if (quotas.isEmpty()) {
-                return null;
+                throw new IllegalArgumentException("No quota found for user: " + username);
             }
 
             Map.Entry<ClientQuotaEntity, Map<String, Double>> entry = quotas.entrySet().iterator().next();
@@ -154,7 +180,7 @@ public class QuotaService {
             response.setEntityName(username);
 
             Map<String, String> configs = new HashMap<>();
-            entry.getValue().forEach((key, value) -> configs.put(key, String.valueOf(value)));
+            entry.getValue().forEach((key, value) -> configs.put(key, BigDecimal.valueOf(value).toPlainString()));
             response.setConfigs(configs);
 
             return response;

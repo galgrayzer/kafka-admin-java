@@ -3,6 +3,7 @@ package com.kafka.admin.controller;
 import com.kafka.admin.model.request.CreateTopicRequest;
 import com.kafka.admin.model.request.UpdateTopicConfigRequest;
 import com.kafka.admin.model.response.ApiResponse;
+import com.kafka.admin.model.response.TopicPartitionOffsetResponse;
 import com.kafka.admin.model.response.TopicResponse;
 import com.kafka.admin.service.TopicService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,24 +29,12 @@ public class TopicController {
         this.contextExtractor = contextExtractor;
     }
 
-    @GetMapping
-    @Operation(summary = "List all topics", description = "Get a list of all topics in the Kafka cluster")
-    public List<TopicResponse> listTopics(
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
-            HttpServletRequest request) throws Exception {
-        
-        var ctx = contextExtractor.extract(request);
-        return topicService.listTopics(ctx.bootstrapServers(), ctx.securityProtocol(), 
-                ctx.username(), ctx.password(), ctx.saslMechanism());
-    }
-
     @GetMapping("/{topicName}")
     @Operation(summary = "Get topic details", description = "Get detailed information about a specific topic")
     public TopicResponse getTopic(
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -58,8 +47,8 @@ public class TopicController {
     @Operation(summary = "Create a new topic", description = "Create a new Kafka topic")
     public ApiResponse createTopic(
             @Valid @RequestBody CreateTopicRequest createRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -72,8 +61,8 @@ public class TopicController {
     @Operation(summary = "Delete a topic", description = "Delete an existing Kafka topic")
     public ApiResponse deleteTopic(
             @Parameter(description = "Topic name") @PathVariable String topicName,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
@@ -87,13 +76,26 @@ public class TopicController {
     public ApiResponse updateTopicConfig(
             @Parameter(description = "Topic name") @PathVariable String topicName,
             @Valid @RequestBody UpdateTopicConfigRequest updateRequest,
-            @Parameter(description = "Bootstrap servers (comma-separated)", example = "broker1:9092,broker2:9092")
-            @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
         
         var ctx = contextExtractor.extract(request);
         topicService.updateTopicConfig(topicName, updateRequest, ctx.bootstrapServers(), ctx.securityProtocol(), 
                 ctx.username(), ctx.password(), ctx.saslMechanism());
         return ApiResponse.success("Topic configuration updated successfully", topicName);
+    }
+
+    @GetMapping("/{topicName}/offsets")
+    @Operation(summary = "Get topic partition offsets", description = "Get beginning and end offsets for all partitions of a topic")
+    public List<TopicPartitionOffsetResponse> getTopicPartitionOffsets(
+            @Parameter(description = "Topic name") @PathVariable String topicName,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+
+        var ctx = contextExtractor.extract(request);
+        return topicService.getTopicPartitionOffsets(topicName, ctx.bootstrapServers(), ctx.securityProtocol(),
+                ctx.username(), ctx.password(), ctx.saslMechanism());
     }
 }

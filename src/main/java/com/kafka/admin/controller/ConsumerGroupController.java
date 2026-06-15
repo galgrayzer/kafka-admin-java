@@ -3,6 +3,7 @@ package com.kafka.admin.controller;
 import com.kafka.admin.model.request.CopyConsumerOffsetsRequest;
 import com.kafka.admin.model.request.ResetConsumerOffsetsByTimeRequest;
 import com.kafka.admin.model.request.ResetConsumerOffsetsRequest;
+import com.kafka.admin.model.request.UpdateTopicPartitionOffsetsRequest;
 import com.kafka.admin.model.response.ApiResponse;
 import com.kafka.admin.model.response.ConsumerOffsetResponse;
 import com.kafka.admin.service.ConsumerService;
@@ -33,7 +34,8 @@ public class ConsumerGroupController {
     public List<ConsumerOffsetResponse> getConsumerOffsets(
             @Parameter(description = "Consumer group ID") @PathVariable String groupId,
             @Parameter(description = "Topic name (optional)") @RequestParam(required = false) String topic,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
@@ -46,7 +48,8 @@ public class ConsumerGroupController {
     public ApiResponse resetConsumerOffsets(
             @Parameter(description = "Consumer group ID") @PathVariable String groupId,
             @Valid @RequestBody ResetConsumerOffsetsRequest resetRequest,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
@@ -60,7 +63,8 @@ public class ConsumerGroupController {
     public ApiResponse resetConsumerOffsetsByTimestamp(
             @Parameter(description = "Consumer group ID") @PathVariable String groupId,
             @Valid @RequestBody ResetConsumerOffsetsByTimeRequest resetRequest,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
@@ -75,12 +79,28 @@ public class ConsumerGroupController {
     public ApiResponse copyConsumerOffsets(
             @Parameter(description = "Consumer group ID") @PathVariable String groupId,
             @Valid @RequestBody CopyConsumerOffsetsRequest copyRequest,
-            @Parameter(description = "Bootstrap servers") @RequestParam(required = false) String bootstrapServers,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
             HttpServletRequest request) throws Exception {
 
         var ctx = contextExtractor.extract(request);
         consumerService.copyConsumerOffsets(groupId, copyRequest, ctx.bootstrapServers(), ctx.securityProtocol(),
                 ctx.username(), ctx.password(), ctx.saslMechanism());
         return ApiResponse.success("Consumer offsets copied successfully");
+    }
+
+    @PostMapping("/{topicName}/offsets/batch-update")
+    @Operation(summary = "Update topic partition offsets", description = "Update offsets for multiple partitions of a topic for a consumer group")
+    public ApiResponse updateTopicPartitionOffsets(
+            @Parameter(description = "Topic name") @PathVariable String topicName,
+            @Valid @RequestBody UpdateTopicPartitionOffsetsRequest updateRequest,
+            @Parameter(description = "Bootstrap servers (comma-separated)", example = "localhost:9092", required = true)
+            @RequestParam(required = true) String bootstrapServers,
+            HttpServletRequest request) throws Exception {
+
+        var ctx = contextExtractor.extract(request);
+        consumerService.updateTopicPartitionOffsets(topicName, updateRequest, ctx.bootstrapServers(), ctx.securityProtocol(),
+                ctx.username(), ctx.password(), ctx.saslMechanism());
+        return ApiResponse.success("Topic partition offsets updated successfully");
     }
 }

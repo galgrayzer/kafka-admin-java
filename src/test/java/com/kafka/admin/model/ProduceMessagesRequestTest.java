@@ -1,5 +1,6 @@
 package com.kafka.admin.model;
 
+import com.kafka.admin.model.request.MessageRecord;
 import com.kafka.admin.model.request.ProduceMessagesRequest;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +12,7 @@ class ProduceMessagesRequestTest {
 
     @Test
     void testProducerRecordSettersAndGetters() {
-        ProduceMessagesRequest.ProducerRecord record = new ProduceMessagesRequest.ProducerRecord();
+        MessageRecord record = new MessageRecord();
         
         record.setKey("key1");
         record.setValue("value1");
@@ -29,7 +30,7 @@ class ProduceMessagesRequestTest {
         request.setTopic("test-topic");
         request.setPartition(0);
         
-        ProduceMessagesRequest.ProducerRecord record = new ProduceMessagesRequest.ProducerRecord();
+        MessageRecord record = new MessageRecord();
         record.setKey("key");
         record.setValue("value");
         request.setRecords(java.util.List.of(record));
@@ -41,7 +42,7 @@ class ProduceMessagesRequestTest {
 
     @Test
     void testHeadersInProducerRecord() {
-        ProduceMessagesRequest.ProducerRecord record = new ProduceMessagesRequest.ProducerRecord();
+        MessageRecord record = new MessageRecord();
         Map<String, String> headers = Map.of("header1", "value1");
         record.setHeaders(headers);
         

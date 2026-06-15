@@ -82,6 +82,7 @@ Priority order (highest to lowest):
 ### UserService
 - Manages SCRAM users
 - Uses `DescribeUserScramCredentials`, `alterUserScramCredentials`
+- Validates user credentials and determines role (consumer/producer/both) via `checkAuthentication`
 
 ### QuotaService
 - Manages client/user quotas
@@ -111,6 +112,11 @@ Priority order (highest to lowest):
 - Gets cluster metadata (brokers, topics)
 - Lists topic names
 - Uses `describeCluster`, `listTopics`
+
+### ClusterController
+- Exposes cluster metadata and topic listing endpoints
+- Exposes quota listing endpoint (via QuotaService)
+- Uses `ClusterService`, `QuotaService`
 
 ## Key Design Decisions
 

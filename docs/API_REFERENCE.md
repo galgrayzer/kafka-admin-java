@@ -6,7 +6,7 @@ All endpoints support these parameters:
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `bootstrapServers` | Query | No | Comma-separated list of Kafka brokers (default: from config) |
+| `bootstrapServers` | Query | Yes | Comma-separated list of Kafka brokers |
 
 ### Security Headers
 
@@ -19,37 +19,29 @@ All endpoints support these parameters:
 
 ## Topics API
 
-### List Topics
-
-```http
-GET /api/v1/topics?bootstrapServers=broker1:9092,broker2:9092
-```
-
-**Response:**
-```json
-[
-  {
-    "name": "my-topic",
-    "partitions": 3,
-    "replicationFactor": 1,
-    "configs": {
-      "cleanup.policy": "delete"
-    },
-    "partitionsReplicas": [
-      {
-        "partitionId": 0,
-        "replicas": [0, 1, 2],
-        "isr": [0, 1, 2]
-      }
-    ]
-  }
-]
-```
-
 ### Get Topic
 
 ```http
 GET /api/v1/topics/{topicName}?bootstrapServers=broker1:9092
+```
+
+**Response:**
+```json
+{
+  "name": "my-topic",
+  "partitions": 3,
+  "replicationFactor": 1,
+  "configs": {
+    "cleanup.policy": "delete"
+  },
+  "partitionsReplicas": [
+    {
+      "partitionId": 0,
+      "replicas": [0, 1, 2],
+      "isr": [0, 1, 2]
+    }
+  ]
+}
 ```
 
 ### Create Topic
@@ -86,6 +78,24 @@ Content-Type: application/json
 
 ```http
 DELETE /api/v1/topics/{topicName}?bootstrapServers=broker1:9092
+```
+
+### Get Topic Partition Offsets
+
+```http
+GET /api/v1/topics/{topicName}/offsets?bootstrapServers=broker1:9092
+```
+
+**Response:**
+```json
+[
+  {
+    "topic": "my-topic",
+    "partition": 0,
+    "beginningOffset": 0,
+    "endOffset": 100
+  }
+]
 ```
 
 ---
@@ -127,29 +137,33 @@ Content-Type: application/json
 DELETE /api/v1/users/{username}?bootstrapServers=broker1:9092
 ```
 
----
-
-## Quotas API
-
-### List Quotas
+### Validate User
 
 ```http
-GET /api/v1/quotas?bootstrapServers=broker1:9092
+GET /api/v1/users/{username}/validate?bootstrapServers=broker1:9092
+```
+
+### Check Authentication
+
+```http
+POST /api/v1/users/authenticate?username=myuser&password=secret&topic=my-topic&bootstrapServers=broker1:9092
 ```
 
 **Response:**
 ```json
-[
-  {
-    "entityType": "user",
-    "entityName": "admin",
-    "configs": {
-      "producer_byte_rate": "1048576",
-      "consumer_byte_rate": "1048576"
-    }
+{
+  "success": true,
+  "message": "Authentication check completed",
+  "data": {
+    "authenticated": true,
+    "role": "consumer"
   }
-]
+}
 ```
+
+---
+
+## Quotas API
 
 ### Create/Alter Quota
 
@@ -164,6 +178,12 @@ Content-Type: application/json
     "producer_byte_rate": "1048576"
   }
 }
+```
+
+### Delete Quota
+
+```http
+DELETE /api/v1/quotas?username=myuser&bootstrapServers=broker1:9092
 ```
 
 ### Get User Quota
@@ -182,12 +202,6 @@ GET /api/v1/quotas/user/{username}?bootstrapServers=broker1:9092
     "consumer_byte_rate": "2097152"
   }
 }
-```
-
-### Delete Quota
-
-```http
-DELETE /api/v1/quotas?username=myuser&bootstrapServers=broker1:9092
 ```
 
 ---
@@ -212,6 +226,28 @@ GET /api/v1/acls?bootstrapServers=broker1:9092
     "permission": "ALLOW"
   }
 ]
+```
+
+### Create ACL
+
+```http
+POST /api/v1/acls?bootstrapServers=broker1:9092
+Content-Type: application/json
+
+{
+  "resourceType": "TOPIC",
+  "resourceName": "my-topic",
+  "principal": "User:myuser",
+  "host": "*",
+  "operation": "READ",
+  "permission": "ALLOW"
+}
+```
+
+### Delete ACL
+
+```http
+DELETE /api/v1/acls?resourceType=TOPIC&resourceName=my-topic&principal=User:myuser&host=*&operation=READ&permission=ALLOW&bootstrapServers=broker1:9092
 ```
 
 ### Grant Consumer ACL
@@ -242,7 +278,7 @@ Content-Type: application/json
 
 ### Grant Producer ACL
 
-Grants DESCRIBE, WRITE, and CREATE on topic.
+Grants DESCRIBE and WRITE on topic.
 
 ```http
 POST /api/v1/acls/user/{username}/producer?bootstrapServers=broker1:9092
@@ -298,6 +334,12 @@ GET /api/v1/cluster-links?bootstrapServers=broker1:9092
 ]
 ```
 
+### Describe Mirror Topics
+
+```http
+GET /api/v1/cluster-links/{linkName}/mirror-topics?bootstrapServers=broker1:9092
+```
+
 ### Create Cluster Link
 
 ```http
@@ -311,6 +353,12 @@ Content-Type: application/json
     "security.protocol": "SASL_PLAINTEXT"
   }
 }
+```
+
+### Delete Cluster Link
+
+```http
+DELETE /api/v1/cluster-links/{linkName}?bootstrapServers=broker1:9092
 ```
 
 ### Create Mirror Topics
@@ -349,41 +397,6 @@ POST /api/v1/cluster-links/{linkName}/topics/{topicName}/failover?bootstrapServe
 
 ```http
 POST /api/v1/cluster-links/{linkName}/topics/{topicName}/promote?bootstrapServers=broker1:9092
-```
-
----
-
-## Users API
-
-### List Users
-
-```http
-GET /api/v1/users?bootstrapServers=broker1:9092
-```
-
-### Create User
-
-```http
-POST /api/v1/users?bootstrapServers=broker1:9092
-Content-Type: application/json
-
-{
-  "username": "myuser",
-  "password": "secret",
-  "mechanism": "SCRAM-SHA-512"
-}
-```
-
-### Validate User
-
-```http
-GET /api/v1/users/{username}/validate?bootstrapServers=broker1:9092
-```
-
-### Delete User
-
-```http
-DELETE /api/v1/users/{username}?bootstrapServers=broker1:9092
 ```
 
 ---
@@ -449,6 +462,21 @@ Content-Type: application/json
 }
 ```
 
+### Update Topic Partition Offsets
+
+```http
+POST /api/v1/consumer-groups/{topicName}/offsets/batch-update?bootstrapServers=broker1:9092
+Content-Type: application/json
+
+{
+  "groupId": "my-group",
+  "partitionOffsets": [
+    {"partition": 0, "offset": 100},
+    {"partition": 1, "offset": 200}
+  ]
+}
+```
+
 ---
 
 ## Messages API
@@ -470,21 +498,23 @@ GET /api/v1/messages/topic/{topicName}/offsets?bootstrapServers=broker1:9092
 ]
 ```
 
-### Fetch Messages
+### Fetch Earliest Messages
 
 ```http
-POST /api/v1/messages/fetch?bootstrapServers=broker1:9092
-Content-Type: application/json
-
-{
-  "topic": "my-topic",
-  "partition": 0,
-  "startingPosition": "earliest",
-  "maxMessages": 10
-}
+GET /api/v1/messages/topic/{topicName}/earliest?partition=0&maxMessages=100&bootstrapServers=broker1:9092
 ```
 
-Options for `startingPosition`: `earliest`, `latest`, or specific `offset` / `timestamp`.
+### Fetch Latest Messages
+
+```http
+GET /api/v1/messages/topic/{topicName}/latest?partition=0&maxMessages=100&bootstrapServers=broker1:9092
+```
+
+### Fetch Messages by Timestamp
+
+```http
+GET /api/v1/messages/topic/{topicName}/by-timestamp?partition=0&timestamp=1704067200000&maxMessages=100&bootstrapServers=broker1:9092
+```
 
 ### Produce Messages
 
@@ -552,6 +582,25 @@ GET /api/v1/cluster/topics?bootstrapServers=broker1:9092
 **Response:**
 ```json
 ["topic1", "topic2", "my-topic"]
+```
+
+### List Quotas
+
+```http
+GET /api/v1/cluster/quotas?bootstrapServers=broker1:9092
+```
+
+**Response:**
+```json
+[
+  {
+    "entityType": "user",
+    "entityName": "admin",
+    "configs": {
+      "producer_byte_rate": "1048576"
+    }
+  }
+]
 ```
 
 ---

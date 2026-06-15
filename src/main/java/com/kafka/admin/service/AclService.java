@@ -9,6 +9,8 @@ import org.apache.kafka.common.acl.*;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourceType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -18,10 +20,19 @@ import java.util.stream.Collectors;
 @Service
 public class AclService {
 
+    private static final Logger log = LoggerFactory.getLogger(AclService.class);
+    private static final String WILDCARD_HOST = "*";
+
     private final KafkaAdminClientFactory adminClientFactory;
 
     public AclService(KafkaAdminClientFactory adminClientFactory) {
         this.adminClientFactory = adminClientFactory;
+    }
+
+    private Admin createAdmin(String bootstrapServers, String securityProtocol,
+            String username, String password, String saslMechanism) {
+        return adminClientFactory.createAdminClient(
+                bootstrapServers, securityProtocol, username, password, saslMechanism);
     }
 
     public List<AclResponse> listAcls(
@@ -31,9 +42,7 @@ public class AclService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        try (Admin admin = adminClientFactory.createAdminClient(
-                bootstrapServers, securityProtocol, username, password, saslMechanism)) {
-
+        try (Admin admin = createAdmin(bootstrapServers, securityProtocol, username, password, saslMechanism)) {
             DescribeAclsResult result = admin.describeAcls(AclBindingFilter.ANY);
             Collection<AclBinding> aclBindings = result.values().get();
 
@@ -51,9 +60,7 @@ public class AclService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        try (Admin admin = adminClientFactory.createAdminClient(
-                bootstrapServers, securityProtocol, username, password, saslMechanism)) {
-
+        try (Admin admin = createAdmin(bootstrapServers, securityProtocol, username, password, saslMechanism)) {
             ResourceType resourceType = ResourceType.valueOf(request.getResourceType().toUpperCase());
             ResourcePattern resourcePattern = new ResourcePattern(
                     resourceType,
@@ -62,7 +69,7 @@ public class AclService {
 
             AclOperation operation = AclOperation.valueOf(request.getOperation().toUpperCase());
             AclPermissionType permission = AclPermissionType.valueOf(request.getPermission().toUpperCase());
-            String host = request.getHost() != null ? request.getHost() : "*";
+            String host = request.getHost() != null ? request.getHost() : WILDCARD_HOST;
 
             AccessControlEntry entry = new AccessControlEntry(
                     request.getPrincipal(),
@@ -72,6 +79,9 @@ public class AclService {
 
             AclBinding aclBinding = new AclBinding(resourcePattern, entry);
 
+            log.info("Creating ACL: principal={}, resource={}/{}, operation={}, permission={}",
+                    request.getPrincipal(), request.getResourceType(), request.getResourceName(),
+                    request.getOperation(), request.getPermission());
             admin.createAcls(Collections.singletonList(aclBinding)).all().get();
         }
     }
@@ -89,9 +99,7 @@ public class AclService {
             @Nullable String password,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        try (Admin admin = adminClientFactory.createAdminClient(
-                bootstrapServers, securityProtocol, username, password, saslMechanism)) {
-
+        try (Admin admin = createAdmin(bootstrapServers, securityProtocol, username, password, saslMechanism)) {
             ResourceType resType = ResourceType.valueOf(resourceType.toUpperCase());
             ResourcePattern resourcePattern = new ResourcePattern(resType, resourceName, PatternType.LITERAL);
 
@@ -104,6 +112,8 @@ public class AclService {
                     resourcePattern.toFilter(),
                     entryFilter);
 
+            log.info("Deleting ACL: principal={}, resource={}/{}, operation={}, permission={}",
+                    principal, resourceType, resourceName, operation, permission);
             admin.deleteAcls(Collections.singletonList(filter)).all().get();
         }
     }
@@ -117,9 +127,7 @@ public class AclService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        try (Admin admin = adminClientFactory.createAdminClient(
-                bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
-
+        try (Admin admin = createAdmin(bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
             String principal = "User:" + username;
             List<AclBinding> aclBindings = new ArrayList<>();
 
@@ -130,11 +138,11 @@ public class AclService {
 
             aclBindings.add(new AclBinding(
                     topicPattern,
-                    new AccessControlEntry(principal, "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
+                    new AccessControlEntry(principal, WILDCARD_HOST, AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
 
             aclBindings.add(new AclBinding(
                     topicPattern,
-                    new AccessControlEntry(principal, "*", AclOperation.READ, AclPermissionType.ALLOW)));
+                    new AccessControlEntry(principal, WILDCARD_HOST, AclOperation.READ, AclPermissionType.ALLOW)));
 
             if (request.getGroup() != null && !request.getGroup().isEmpty()) {
                 ResourcePattern groupPattern = new ResourcePattern(
@@ -144,13 +152,11 @@ public class AclService {
 
                 aclBindings.add(new AclBinding(
                         groupPattern,
-                        new AccessControlEntry(principal, "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
-
-                aclBindings.add(new AclBinding(
-                        groupPattern,
-                        new AccessControlEntry(principal, "*", AclOperation.READ, AclPermissionType.ALLOW)));
+                        new AccessControlEntry(principal, WILDCARD_HOST, AclOperation.READ, AclPermissionType.ALLOW)));
             }
 
+            log.info("Granting consumer ACL: principal={}, topic={}, group={}",
+                    principal, request.getTopic(), request.getGroup());
             admin.createAcls(aclBindings).all().get();
         }
     }
@@ -164,9 +170,7 @@ public class AclService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        try (Admin admin = adminClientFactory.createAdminClient(
-                bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
-
+        try (Admin admin = createAdmin(bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
             String principal = "User:" + username;
             List<AclBinding> aclBindings = new ArrayList<>();
 
@@ -177,11 +181,11 @@ public class AclService {
 
             aclBindings.add(new AclBinding(
                     topicPattern,
-                    new AccessControlEntry(principal, "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
+                    new AccessControlEntry(principal, WILDCARD_HOST, AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
 
             aclBindings.add(new AclBinding(
                     topicPattern,
-                    new AccessControlEntry(principal, "*", AclOperation.WRITE, AclPermissionType.ALLOW)));
+                    new AccessControlEntry(principal, WILDCARD_HOST, AclOperation.WRITE, AclPermissionType.ALLOW)));
 
             if (request.getTransactionId() != null && !request.getTransactionId().isEmpty()) {
                 ResourcePattern txPattern = new ResourcePattern(
@@ -191,13 +195,14 @@ public class AclService {
 
                 aclBindings.add(new AclBinding(
                         txPattern,
-                        new AccessControlEntry(principal, "*", AclOperation.WRITE, AclPermissionType.ALLOW)));
+                        new AccessControlEntry(principal, WILDCARD_HOST, AclOperation.WRITE, AclPermissionType.ALLOW)));
             }
 
             aclBindings.add(new AclBinding(
                     topicPattern,
-                    new AccessControlEntry(principal, "*", AclOperation.CREATE, AclPermissionType.ALLOW)));
+                    new AccessControlEntry(principal, WILDCARD_HOST, AclOperation.CREATE, AclPermissionType.ALLOW)));
 
+            log.info("Granting producer ACL: principal={}, topic={}", principal, request.getTopic());
             admin.createAcls(aclBindings).all().get();
         }
     }
@@ -211,8 +216,8 @@ public class AclService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        return checkAcl(username, topic, 
-                AclOperation.READ, bootstrapServers, securityProtocol, 
+        return checkAcl(username, topic,
+                AclOperation.READ, bootstrapServers, securityProtocol,
                 adminUsername, adminPassword, saslMechanism);
     }
 
@@ -225,8 +230,8 @@ public class AclService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        return checkAcl(username, topic, 
-                AclOperation.WRITE, bootstrapServers, securityProtocol, 
+        return checkAcl(username, topic,
+                AclOperation.WRITE, bootstrapServers, securityProtocol,
                 adminUsername, adminPassword, saslMechanism);
     }
 
@@ -239,9 +244,7 @@ public class AclService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        try (Admin admin = adminClientFactory.createAdminClient(
-                bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
-
+        try (Admin admin = createAdmin(bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
             String principal = "User:" + username;
             List<AclBindingFilter> filters = new ArrayList<>();
 
@@ -252,11 +255,11 @@ public class AclService {
 
             filters.add(new AclBindingFilter(
                     topicPattern.toFilter(),
-                    new AccessControlEntryFilter(principal, "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
+                    new AccessControlEntryFilter(principal, WILDCARD_HOST, AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
 
             filters.add(new AclBindingFilter(
                     topicPattern.toFilter(),
-                    new AccessControlEntryFilter(principal, "*", AclOperation.READ, AclPermissionType.ALLOW)));
+                    new AccessControlEntryFilter(principal, WILDCARD_HOST, AclOperation.READ, AclPermissionType.ALLOW)));
 
             if (request.getGroup() != null && !request.getGroup().isEmpty()) {
                 ResourcePattern groupPattern = new ResourcePattern(
@@ -266,13 +269,11 @@ public class AclService {
 
                 filters.add(new AclBindingFilter(
                         groupPattern.toFilter(),
-                        new AccessControlEntryFilter(principal, "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
-
-                filters.add(new AclBindingFilter(
-                        groupPattern.toFilter(),
-                        new AccessControlEntryFilter(principal, "*", AclOperation.READ, AclPermissionType.ALLOW)));
+                        new AccessControlEntryFilter(principal, WILDCARD_HOST, AclOperation.READ, AclPermissionType.ALLOW)));
             }
 
+            log.info("Revoking consumer ACL: principal={}, topic={}, group={}",
+                    principal, request.getTopic(), request.getGroup());
             admin.deleteAcls(filters).all().get();
         }
     }
@@ -286,9 +287,7 @@ public class AclService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        try (Admin admin = adminClientFactory.createAdminClient(
-                bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
-
+        try (Admin admin = createAdmin(bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
             String principal = "User:" + username;
             List<AclBindingFilter> filters = new ArrayList<>();
 
@@ -299,15 +298,15 @@ public class AclService {
 
             filters.add(new AclBindingFilter(
                     topicPattern.toFilter(),
-                    new AccessControlEntryFilter(principal, "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
+                    new AccessControlEntryFilter(principal, WILDCARD_HOST, AclOperation.DESCRIBE, AclPermissionType.ALLOW)));
 
             filters.add(new AclBindingFilter(
                     topicPattern.toFilter(),
-                    new AccessControlEntryFilter(principal, "*", AclOperation.WRITE, AclPermissionType.ALLOW)));
+                    new AccessControlEntryFilter(principal, WILDCARD_HOST, AclOperation.WRITE, AclPermissionType.ALLOW)));
 
             filters.add(new AclBindingFilter(
                     topicPattern.toFilter(),
-                    new AccessControlEntryFilter(principal, "*", AclOperation.CREATE, AclPermissionType.ALLOW)));
+                    new AccessControlEntryFilter(principal, WILDCARD_HOST, AclOperation.CREATE, AclPermissionType.ALLOW)));
 
             if (request.getTransactionId() != null && !request.getTransactionId().isEmpty()) {
                 ResourcePattern txPattern = new ResourcePattern(
@@ -317,9 +316,10 @@ public class AclService {
 
                 filters.add(new AclBindingFilter(
                         txPattern.toFilter(),
-                        new AccessControlEntryFilter(principal, "*", AclOperation.WRITE, AclPermissionType.ALLOW)));
+                        new AccessControlEntryFilter(principal, WILDCARD_HOST, AclOperation.WRITE, AclPermissionType.ALLOW)));
             }
 
+            log.info("Revoking producer ACL: principal={}, topic={}", principal, request.getTopic());
             admin.deleteAcls(filters).all().get();
         }
     }
@@ -334,12 +334,10 @@ public class AclService {
             @Nullable String adminPassword,
             @Nullable String saslMechanism) throws ExecutionException, InterruptedException {
 
-        try (Admin admin = adminClientFactory.createAdminClient(
-                bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
-
+        try (Admin admin = createAdmin(bootstrapServers, securityProtocol, adminUsername, adminPassword, saslMechanism)) {
             String principal = "User:" + username;
-            
-            AccessControlEntryFilter entryFilter = new AccessControlEntryFilter(principal, "*", operation, AclPermissionType.ALLOW);
+
+            AccessControlEntryFilter entryFilter = new AccessControlEntryFilter(principal, WILDCARD_HOST, operation, AclPermissionType.ALLOW);
 
             AclBindingFilter topicFilter = new AclBindingFilter(
                     new ResourcePattern(ResourceType.TOPIC, topic, PatternType.LITERAL).toFilter(),
@@ -347,7 +345,7 @@ public class AclService {
 
             DescribeAclsResult result = admin.describeAcls(topicFilter);
             Collection<AclBinding> acls = result.values().get();
-            
+
             return !acls.isEmpty();
         }
     }

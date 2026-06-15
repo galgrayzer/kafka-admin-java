@@ -1,6 +1,5 @@
 package com.kafka.admin.client;
 
-import com.kafka.admin.constants.AdminConstants;
 import com.kafka.admin.config.KafkaAdminConfig;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.admin.Admin;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Component
 public class KafkaAdminClientFactory {
@@ -31,43 +29,13 @@ public class KafkaAdminClientFactory {
             @Nullable String saslMechanism,
             @Nullable Boolean confluentAdmin) {
 
-        String finalBootstrapServers = Optional.ofNullable(bootstrapServers)
-                .orElse(config.getDefaultBootstrapServers());
+        Map<String, Object> props = createProperties(
+                bootstrapServers, securityProtocol, username, password, saslMechanism
+        );
 
-        String finalSecurityProtocol = Optional.ofNullable(securityProtocol)
-                .orElse(config.getDefaultSecurityProtocol());
-
-        Map<String, Object> props = new HashMap<>();
-        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, finalBootstrapServers);
-
-        if (finalSecurityProtocol.equals(SecurityProtocol.SASL_PLAINTEXT.name()) ||
-                finalSecurityProtocol.equals(SecurityProtocol.SASL_SSL.name())) {
-            props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, finalSecurityProtocol);
-
-            String finalUsername = Optional.ofNullable(username)
-                    .orElse(config.getDefaultUsername());
-            String finalPassword = Optional.ofNullable(password)
-                    .orElse(config.getDefaultPassword());
-            String finalSaslMechanism = Optional.ofNullable(saslMechanism)
-                    .orElse(config.getDefaultSaslMechanism());
-
-            if (finalUsername != null && finalPassword != null) {
-                props.put(SaslConfigs.SASL_MECHANISM, finalSaslMechanism);
-                props.put(SaslConfigs.SASL_JAAS_CONFIG,
-                        "org.apache.kafka.common.security.scram.ScramLoginModule required " +
-                        "username=\"" + finalUsername + "\" " +
-                        "password=\"" + finalPassword + "\";");
-            }
-        } else if (finalSecurityProtocol.equals(SecurityProtocol.SSL.name()) ||
-                   finalSecurityProtocol.equals(SecurityProtocol.PLAINTEXT.name())) {
-            props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, finalSecurityProtocol);
-        }
-
-        if (Boolean.TRUE.equals(confluentAdmin)) {
-            return ConfluentAdmin.create(props);
-        }
-
-        return Admin.create(props);
+        return Boolean.TRUE.equals(confluentAdmin)
+                ? ConfluentAdmin.create(props)
+                : Admin.create(props);
     }
 
     public Admin createAdminClient(
@@ -76,7 +44,8 @@ public class KafkaAdminClientFactory {
             @Nullable String username,
             @Nullable String password,
             @Nullable String saslMechanism) {
-        return this.createAdminClient(bootstrapServers, securityProtocol, username, password, saslMechanism, false);
+
+        return createAdminClient(bootstrapServers, securityProtocol, username, password, saslMechanism, false);
     }
 
     public Map<String, Object> createProperties(
@@ -86,38 +55,39 @@ public class KafkaAdminClientFactory {
             @Nullable String password,
             @Nullable String saslMechanism) {
 
-        String finalBootstrapServers = Optional.ofNullable(bootstrapServers)
-                .orElse(config.getDefaultBootstrapServers());
+        if (bootstrapServers == null || bootstrapServers.isBlank()) {
+            throw new IllegalArgumentException("bootstrapServers is required");
+        }
 
-        String finalSecurityProtocol = Optional.ofNullable(securityProtocol)
-                .orElse(config.getDefaultSecurityProtocol());
+        SecurityProtocol protocol = SecurityProtocol.forName(securityProtocol);
 
         Map<String, Object> props = new HashMap<>();
-        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, finalBootstrapServers);
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, protocol.name());
 
-        if (finalSecurityProtocol.equals(SecurityProtocol.SASL_PLAINTEXT.name()) ||
-                finalSecurityProtocol.equals(SecurityProtocol.SASL_SSL.name())) {
-            props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, finalSecurityProtocol);
-            
-            String finalUsername = Optional.ofNullable(username)
-                    .orElse(config.getDefaultUsername());
-            String finalPassword = Optional.ofNullable(password)
-                    .orElse(config.getDefaultPassword());
-            String finalSaslMechanism = Optional.ofNullable(saslMechanism)
-                    .orElse(config.getDefaultSaslMechanism());
+        props.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, config.getDefaultRequestTimeoutMs());
+        props.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, config.getDefaultAdminClientTimeoutMs());
 
-            if (finalUsername != null && finalPassword != null) {
-                props.put(SaslConfigs.SASL_MECHANISM, finalSaslMechanism);
-                props.put(SaslConfigs.SASL_JAAS_CONFIG, 
-                        "org.apache.kafka.common.security.scram.ScramLoginModule required " +
-                        "username=\"" + finalUsername + "\" " +
-                        "password=\"" + finalPassword + "\";");
+        if (isSasl(protocol)) {
+            if (username == null || password == null) {
+                throw new IllegalArgumentException("SASL authentication requires both username and password.");
             }
-        } else if (finalSecurityProtocol.equals(SecurityProtocol.SSL.name()) ||
-                   finalSecurityProtocol.equals(SecurityProtocol.PLAINTEXT.name())) {
-            props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, finalSecurityProtocol);
+            props.put(SaslConfigs.SASL_MECHANISM, saslMechanism);
+            props.put(SaslConfigs.SASL_JAAS_CONFIG, buildJaasConfig(username, password));
         }
 
         return props;
+    }
+
+    private boolean isSasl(SecurityProtocol protocol) {
+        return protocol == SecurityProtocol.SASL_SSL ||
+               protocol == SecurityProtocol.SASL_PLAINTEXT;
+    }
+
+    private String buildJaasConfig(String username, String password) {
+        return String.format(
+                "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";",
+                username, password
+        );
     }
 }
